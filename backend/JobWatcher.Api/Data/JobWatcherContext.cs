@@ -1,0 +1,44 @@
+using JobWatcher.Api.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace JobWatcher.Api.Data;
+
+public class JobWatcherContext : DbContext
+{
+    public JobWatcherContext(DbContextOptions<JobWatcherContext> options) : base(options)
+    {
+    }
+
+    public DbSet<Application> Applications => Set<Application>();
+    public DbSet<Resume> Resumes => Set<Resume>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<Application>(entity =>
+        {
+            entity.ToTable("applications");
+            entity.HasIndex(e => e.JobId).IsUnique();
+            entity.Property(e => e.JobId).HasMaxLength(100);
+            entity.Property(e => e.JobTitle).HasMaxLength(255);
+            entity.Property(e => e.Company).HasMaxLength(255);
+            entity.Property(e => e.Location).HasMaxLength(255);
+            entity.Property(e => e.Salary).HasMaxLength(255);
+            entity.Property(e => e.ApplyLink).HasMaxLength(500);
+            entity.Property(e => e.SearchKey).HasMaxLength(255);
+            entity.Property(e => e.Source).HasMaxLength(100);
+            entity.Property(e => e.Status).HasMaxLength(50).HasDefaultValue("not_applied");
+            entity.Property(e => e.MatchingScore).HasDefaultValue(0.0);
+            entity.Property(e => e.PostedTime).HasColumnType("datetime2");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+        });
+
+        modelBuilder.Entity<Resume>(entity =>
+        {
+            entity.ToTable("resumes");
+            entity.Property(e => e.Filename).HasMaxLength(255);
+            entity.Property(e => e.UploadedAt).HasDefaultValueSql("GETUTCDATE()");
+        });
+    }
+}
