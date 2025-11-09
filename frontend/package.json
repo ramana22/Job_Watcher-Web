@@ -1,0 +1,13 @@
+{
+  "name": "job-watcher-frontend",
+  "version": "1.0.0",
+  "description": "Static dashboard for the Job Watcher web application",
+  "private": true,
+  "scripts": {
+    "start": "lite-server",
+    "start:ci": "lite-server --baseDir=./ --port=4173"
+  },
+  "devDependencies": {
+    "lite-server": "^2.6.1"
+  }
+}

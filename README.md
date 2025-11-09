@@ -22,6 +22,7 @@ sql/               SQL Server schema scripts
 ## Prerequisites
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download)
+- Node.js 18+ and npm for running the static dashboard locally
 - SQL Server instance (LocalDB, container, or hosted) if you plan to persist data outside of development.
 
 ## Running the API locally
@@ -49,7 +50,18 @@ The API listens on `https://localhost:5001` and `http://localhost:5000` by defau
 
 ## Front-end usage
 
-The static dashboard lives in `frontend/index.html`. Open the file in a browser (or serve it from any static host) and it will call the API endpoints described below. When running locally you can simply open the file directly while the API runs on `localhost:5000`/`5001`.
+1. Install dependencies once:
+   ```bash
+   cd frontend
+   npm install
+   ```
+2. Start the lightweight dev server (defaults to http://localhost:3000):
+   ```bash
+   npm run start
+   ```
+3. With the ASP.NET Core API running on http://localhost:5000, browse to the served dashboard.
+
+The build uses [lite-server](https://github.com/johnpapa/lite-server) to serve the static assets with live reload. You can deploy the contents of the `frontend/` directory to any static host if you prefer not to use the dev server.
 
 ## Key API endpoints
 
