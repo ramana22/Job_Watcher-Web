@@ -4,6 +4,7 @@ obj/
 *.user
 *.suo
 
+temp_auto_push.bat
 # Node / Front-end
 node_modules/
 dist/
@@ -11,3 +12,5 @@ dist/
 # OS
 .DS_Store
 Thumbs.db
+.gitignore
+branch_structure.json
