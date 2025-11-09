@@ -1,0 +1,38 @@
+CREATE DATABASE JobWatcher;
+GO
+
+USE JobWatcher;
+GO
+
+CREATE TABLE Applications (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    JobId NVARCHAR(100) NOT NULL UNIQUE,
+    JobTitle NVARCHAR(255) NOT NULL,
+    Company NVARCHAR(255) NOT NULL,
+    Location NVARCHAR(255) NULL,
+    Salary NVARCHAR(255) NULL,
+    Description NVARCHAR(MAX) NULL,
+    ApplyLink NVARCHAR(500) NULL,
+    SearchKey NVARCHAR(255) NULL,
+    PostedTime DATETIME2 NOT NULL,
+    Source NVARCHAR(100) NOT NULL,
+    MatchingScore DECIMAL(5, 2) NOT NULL DEFAULT 0,
+    Status NVARCHAR(50) NOT NULL DEFAULT 'not_applied',
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+);
+
+CREATE TABLE Resumes (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    FileName NVARCHAR(255) NOT NULL,
+    Content VARBINARY(MAX) NOT NULL,
+    TextContent NVARCHAR(MAX) NOT NULL,
+    UploadedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+);
+
+CREATE VIEW CompanyDirectory AS
+SELECT
+    Company AS CompanyName,
+    MIN(ApplyLink) AS CareerSite
+FROM Applications
+GROUP BY Company;
+GO
