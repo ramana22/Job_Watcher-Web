@@ -1,10 +1,10 @@
 # Job Watcher Web
 
-A lightweight web dashboard and REST API for aggregating job applications collected by the HiringCafe Job Watcher bot. The project exposes endpoints that the GitHub Action can call to persist new applications, calculates resume-to-job matching scores, and serves a simple front-end for reviewing and filtering records.
+A lightweight web dashboard and ASP.NET Core REST API for aggregating job applications collected by the HiringCafe Job Watcher bot. The service exposes endpoints that the GitHub Action can call to persist new applications, calculates resume-to-job matching scores, and serves a simple front-end for reviewing and filtering records.
 
 ## Features
 
-- **API ingestion** – `POST /api/applications` accepts the JSON payload produced by the HiringCafe job watcher and stores or updates records.
+- **API ingestion** – `POST /api/applications` accepts the JSON payload produced by the HiringCafe job watcher and stores or updates records by `job_id`.
 - **Resume matching** – Upload a resume once and reuse it to compute application tracking system (ATS)-style keyword overlap scores.
 - **Filtering & sorting** – View applications in a table with filters for status, source, and posting date windows (24 hours, 3 days, 5 days) plus sort options.
 - **Apply confirmation** – Opening the apply link prompts for confirmation and marks the application as "Applied" when confirmed.
@@ -14,36 +14,42 @@ A lightweight web dashboard and REST API for aggregating job applications collec
 ## Project structure
 
 ```
-backend/           FastAPI application and database models
+backend/           ASP.NET Core Web API project
 frontend/          Static HTML dashboard that consumes the API
 sql/               SQL Server schema scripts
 ```
 
+## Prerequisites
+
+- [.NET 8 SDK](https://dotnet.microsoft.com/download)
+- SQL Server instance (LocalDB, container, or hosted) if you plan to persist data outside of development.
+
 ## Running the API locally
 
-1. **Create a virtual environment**
+1. **Configure the connection string**
+   - Update `backend/JobWatcher.Api/appsettings.json` with the correct SQL Server connection string. The default assumes a local SQL Server instance with the `sa` user.
+   - For quick smoke tests you can replace the provider in `Program.cs` with `UseInMemoryDatabase`, but the project ships configured for SQL Server.
+
+2. **Restore packages and build**
    ```bash
    cd backend
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows use `.venv\\Scripts\\activate`
-   ```
-2. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. **(Optional) Configure a database URL**
-   - By default the API uses SQLite (`sqlite:///./jobwatcher.db`).
-   - To use SQL Server locally or in production, set the `DATABASE_URL` environment variable to a valid SQLAlchemy connection string, e.g. `mssql+pyodbc://user:password@server/database?driver=ODBC+Driver+18+for+SQL+Server`.
-4. **Start the development server**
-   ```bash
-   uvicorn app.main:app --reload
+   dotnet restore
+   dotnet build
    ```
 
-The API will be available at `http://localhost:8000`.
+3. **Apply the SQL schema**
+   - Run the statements in `sql/create_tables.sql` against your SQL Server database to create the `applications` and `resumes` tables.
+
+4. **Run the API**
+   ```bash
+   dotnet run --project JobWatcher.Api
+   ```
+
+The API listens on `https://localhost:5001` and `http://localhost:5000` by default. Update `frontend/app.js` if you expose the API on a different host or port.
 
 ## Front-end usage
 
-The static dashboard lives in `frontend/index.html`. Open the file in a browser (or serve it from any static host) and it will call the API endpoints described below. When running locally you can simply open the file directly while the API runs on `localhost:8000`.
+The static dashboard lives in `frontend/index.html`. Open the file in a browser (or serve it from any static host) and it will call the API endpoints described below. When running locally you can simply open the file directly while the API runs on `localhost:5000`/`5001`.
 
 ## Key API endpoints
 
@@ -57,10 +63,6 @@ The static dashboard lives in `frontend/index.html`. Open the file in a browser 
 | `GET`  | `/api/companies` | List companies and their derived career site URLs. |
 | `GET`  | `/health` | Basic health check endpoint. |
 
-## SQL Server schema
-
-Use `sql/create_tables.sql` to create the database, tables, and a convenience view in SQL Server. The FastAPI application uses SQLAlchemy models that map to the same structure and can connect to SQL Server by updating `DATABASE_URL`.
-
 ## Integrating with the HiringCafe job watcher
 
 Configure the GitHub Actions workflow to send the fetched job JSON to the API:
@@ -73,14 +75,14 @@ Configure the GitHub Actions workflow to send the fetched job JSON to the API:
       -d "${RESPONSE_JSON}"
 ```
 
-Make sure the payload matches the `ApplicationCreate` schema defined in `backend/app/schemas.py`.
+Ensure the payload matches the schema consumed by `ApplicationCreateRequest` in `backend/JobWatcher.Api/DTOs/ApplicationDtos.cs`.
 
 ## Resume matching notes
 
-- The demo implementation expects UTF-8 text resumes. In production you can extend `upload_resume` to process PDF or DOCX files into raw text before storing.
-- Matching scores are computed by simple keyword overlap for clarity; you can replace `calculate_matching_score` in `backend/app/utils.py` with a more advanced algorithm as needed.
+- The demo implementation expects UTF-8 text resumes. In production you can extend `ResumeController.UploadResume` to process PDF or DOCX files into raw text before storing.
+- Matching scores are computed by simple keyword overlap for clarity; you can replace `MatchingService` with a more advanced algorithm as needed.
 
 ## Development tips
 
-- For database inspection, open the generated `jobwatcher.db` (SQLite) using `sqlite3` or your preferred SQL client.
-- When switching to SQL Server, install the appropriate driver (`pyodbc`) and update `backend/requirements.txt` accordingly.
+- Because this repository does not include compiled artifacts, run `dotnet clean` if you switch between environments to ensure a fresh build.
+- If you need entity migrations, scaffold them with `dotnet ef migrations add <Name>` once you install the `dotnet-ef` tool and reference the SQL Server provider.

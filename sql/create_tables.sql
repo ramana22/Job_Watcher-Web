@@ -4,35 +4,55 @@ GO
 USE JobWatcher;
 GO
 
-CREATE TABLE Applications (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    JobId NVARCHAR(100) NOT NULL UNIQUE,
-    JobTitle NVARCHAR(255) NOT NULL,
-    Company NVARCHAR(255) NOT NULL,
-    Location NVARCHAR(255) NULL,
-    Salary NVARCHAR(255) NULL,
-    Description NVARCHAR(MAX) NULL,
-    ApplyLink NVARCHAR(500) NULL,
-    SearchKey NVARCHAR(255) NULL,
-    PostedTime DATETIME2 NOT NULL,
-    Source NVARCHAR(100) NOT NULL,
-    MatchingScore DECIMAL(5, 2) NOT NULL DEFAULT 0,
-    Status NVARCHAR(50) NOT NULL DEFAULT 'not_applied',
-    CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+IF OBJECT_ID('applications', 'U') IS NOT NULL
+BEGIN
+    DROP TABLE applications;
+END;
+
+IF OBJECT_ID('resumes', 'U') IS NOT NULL
+BEGIN
+    DROP TABLE resumes;
+END;
+
+CREATE TABLE applications (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    job_id NVARCHAR(100) NOT NULL UNIQUE,
+    job_title NVARCHAR(255) NOT NULL,
+    company NVARCHAR(255) NOT NULL,
+    location NVARCHAR(255) NULL,
+    salary NVARCHAR(255) NULL,
+    description NVARCHAR(MAX) NULL,
+    apply_link NVARCHAR(500) NULL,
+    search_key NVARCHAR(255) NULL,
+    posted_time DATETIME2 NOT NULL,
+    source NVARCHAR(100) NOT NULL,
+    matching_score FLOAT NOT NULL DEFAULT 0,
+    status NVARCHAR(50) NOT NULL DEFAULT 'not_applied',
+    created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
 );
 
-CREATE TABLE Resumes (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    FileName NVARCHAR(255) NOT NULL,
-    Content VARBINARY(MAX) NOT NULL,
-    TextContent NVARCHAR(MAX) NOT NULL,
-    UploadedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+CREATE INDEX IX_applications_job_id ON applications(job_id);
+CREATE INDEX IX_applications_source ON applications(source);
+CREATE INDEX IX_applications_status ON applications(status);
+CREATE INDEX IX_applications_posted_time ON applications(posted_time);
+
+CREATE TABLE resumes (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    filename NVARCHAR(255) NOT NULL,
+    content VARBINARY(MAX) NOT NULL,
+    text_content NVARCHAR(MAX) NOT NULL,
+    uploaded_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
 );
+
+IF OBJECT_ID('CompanyDirectory', 'V') IS NOT NULL
+BEGIN
+    DROP VIEW CompanyDirectory;
+END;
 
 CREATE VIEW CompanyDirectory AS
 SELECT
-    Company AS CompanyName,
-    MIN(ApplyLink) AS CareerSite
-FROM Applications
-GROUP BY Company;
+    company AS CompanyName,
+    MIN(apply_link) AS CareerSite
+FROM applications
+GROUP BY company;
 GO

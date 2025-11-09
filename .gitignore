@@ -1,15 +1,8 @@
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.so
-.venv/
-.env
-
-# Databases
-*.db
-*.sqlite3
+# .NET
+bin/
+obj/
+*.user
+*.suo
 
 # Node / Front-end
 node_modules/
