@@ -164,9 +164,9 @@ export function getCompanies() {
 }
 
 export function login(credentials) {
-  return request('/api/auth/login', { method: 'POST', body: credentials, includeAuth: false }, 'Invalid username or password.');
+  return request('/api/Auth/login', { method: 'POST', body: credentials, includeAuth: false }, 'Invalid username or password.');
 }
 
 export function register(credentials) {
-  return request('/api/auth/register', { method: 'POST', body: credentials, includeAuth: false }, 'Unable to register user.');
+  return request('/api/Auth/register', { method: 'POST', body: credentials, includeAuth: false }, 'Unable to register user.');
 }
