@@ -39,10 +39,6 @@ jobs:
         with:
           dotnet-version: ${{ env.SWASHBUCKLE_DOTNET_CORE_VERSION }}
 
-      - name: Debug: Verify folder structure
-        run: dir
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-
       - name: Restore
         run: dotnet restore JobWatcher.Api.csproj
         working-directory: ${{ env.WORKING_DIRECTORY }}
