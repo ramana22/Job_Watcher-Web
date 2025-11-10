@@ -60,23 +60,23 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
       # --- Swashbuckle CLI setup and Swagger generation ---
-      - name: Install Swashbuckle CLI .NET Global Tool
-        run: dotnet tool install --global Swashbuckle.AspNetCore.Cli --version ${{ env.SWASHBUCLE_ASPNET_CORE_CLI_PACKAGE_VERSION }}
+      # - name: Install Swashbuckle CLI .NET Global Tool
+      #   run: dotnet tool install --global Swashbuckle.AspNetCore.Cli --version ${{ env.SWASHBUCLE_ASPNET_CORE_CLI_PACKAGE_VERSION }}
 
-      - name: Verify Swagger CLI Installation
-        run: |
-          $env:PATH += ";C:\Users\runneradmin\.dotnet\tools"
-          swagger --version
-        shell: pwsh
+      # - name: Verify Swagger CLI Installation
+      #   run: |
+      #     $env:PATH += ";C:\Users\runneradmin\.dotnet\tools"
+      #     swagger --version
+      #   shell: pwsh
 
-      - name: Generate Open API Specification Document
-        run: |
-          $env:PATH += ";C:\Users\runneradmin\.dotnet\tools"
-          swagger tofile --output "${{ env.API_IMPORT_SPECIFICATION_PATH }}" "${{ env.API_IMPORT_DLL }}" "${{ env.API_IMPORT_VERSION }}" --no-build --startupAssembly "${{ env.API_IMPORT_DLL }}"
-        shell: pwsh
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-        env:
-          ASPNETCORE_ENVIRONMENT: Development
+      # - name: Generate Open API Specification Document
+      #   run: |
+      #     $env:PATH += ";C:\Users\runneradmin\.dotnet\tools"
+      #     swagger tofile --output "${{ env.API_IMPORT_SPECIFICATION_PATH }}" "${{ env.API_IMPORT_DLL }}" "${{ env.API_IMPORT_VERSION }}" --no-build --startupAssembly "${{ env.API_IMPORT_DLL }}"
+      #   shell: pwsh
+      #   working-directory: ${{ env.WORKING_DIRECTORY }}
+      #   env:
+      #     ASPNETCORE_ENVIRONMENT: Development
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
