@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ApplicationsTable from './components/ApplicationsTable.jsx';
 import CompaniesTable from './components/CompaniesTable.jsx';
 import Filters from './components/Filters.jsx';
@@ -33,6 +33,56 @@ export default function App() {
   const [companies, setCompanies] = useState([]);
   const [companiesLoading, setCompaniesLoading] = useState(false);
   const [companiesError, setCompaniesError] = useState('');
+
+  const [pendingApplication, setPendingApplication] = useState(null);
+  const [showApplyPrompt, setShowApplyPrompt] = useState(false);
+  const [applyConfirmationLoading, setApplyConfirmationLoading] = useState(false);
+
+  const pendingApplicationRef = useRef(null);
+  useEffect(() => {
+    pendingApplicationRef.current = pendingApplication;
+  }, [pendingApplication]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      if (pendingApplicationRef.current) {
+        setShowApplyPrompt(true);
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && pendingApplicationRef.current) {
+        setShowApplyPrompt(true);
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!showApplyPrompt) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setShowApplyPrompt(false);
+        setPendingApplication(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showApplyPrompt]);
 
   const sourceOptions = useMemo(() => {
     const options = new Set(['all']);
@@ -122,22 +172,41 @@ export default function App() {
     }
   };
 
-  const handleApply = async (application) => {
-    const confirmed = window.confirm(
-      'Open the apply link and move this job to the applied list? This action cannot be undone.',
-    );
-    if (!confirmed) {
+  const handleApply = (application) => {
+    if (!application?.apply_link) {
       return;
     }
+
+    window.open(application.apply_link, '_blank', 'noopener');
+    setPendingApplication(application);
+    setShowApplyPrompt(false);
+  };
+
+  const handleApplyConfirmation = async () => {
+    if (!pendingApplication?.id) {
+      setShowApplyPrompt(false);
+      setPendingApplication(null);
+      return;
+    }
+
+    setApplyConfirmationLoading(true);
     try {
-      await markApplicationAsApplied(application.id);
-      window.open(application.apply_link, '_blank', 'noopener');
+      await markApplicationAsApplied(pendingApplication.id);
       await refreshApplications();
       await refreshCompanies();
+      setShowApplyPrompt(false);
+      setPendingApplication(null);
     } catch (error) {
       console.error(error);
       window.alert('Unable to mark application as applied. Please try again.');
+    } finally {
+      setApplyConfirmationLoading(false);
     }
+  };
+
+  const handleApplyDismiss = () => {
+    setShowApplyPrompt(false);
+    setPendingApplication(null);
   };
 
   return (
@@ -164,6 +233,30 @@ export default function App() {
         />
         <CompaniesTable companies={companies} isLoading={companiesLoading} error={companiesError} />
       </main>
+      {showApplyPrompt && pendingApplication ? (
+        <div className="modal-backdrop" role="presentation">
+          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="apply-prompt-title">
+            <h3 id="apply-prompt-title">Have you applied?</h3>
+            <p>
+              Mark <strong>{pendingApplication.job_title}</strong>
+              {pendingApplication.company ? ` at ${pendingApplication.company}` : ''} as applied?
+            </p>
+            <div className="modal-actions">
+              <button type="button" className="button secondary" onClick={handleApplyDismiss}>
+                Not yet
+              </button>
+              <button
+                type="button"
+                className="button primary"
+                onClick={handleApplyConfirmation}
+                disabled={applyConfirmationLoading}
+              >
+                {applyConfirmationLoading ? 'Saving…' : 'Yes, mark as applied'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
