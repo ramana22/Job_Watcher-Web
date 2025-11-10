@@ -56,45 +56,54 @@ public class ApplicationsController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<ApplicationResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<ApplicationResponse>>> UpsertApplications([FromBody] IEnumerable<ApplicationCreateRequest> payload)
     {
-        if (payload is null)
+        try
         {
-            return BadRequest("Request body is required");
-        }
-
-        var latestResume = await _context.Resumes.OrderByDescending(resume => resume.UploadedAt).FirstOrDefaultAsync();
-        var resumeText = latestResume?.TextContent;
-
-        var updated = new List<Application>();
-        foreach (var item in payload)
-        {
-            var existing = await _context.Applications.FirstOrDefaultAsync(app => app.JobId == item.JobId);
-            if (existing is null)
+            if (payload is null)
             {
-                existing = new Application
+                return BadRequest("Request body is required");
+            }
+            var latestResume = await _context.Resumes.OrderByDescending(resume => resume.UploadedAt).FirstOrDefaultAsync();
+            var resumeText = latestResume?.TextContent;
+
+            var updated = new List<Application>();
+            foreach (var item in payload)
+            {
+                var existing = await _context.Applications.FirstOrDefaultAsync(app => app.JobId == item.JobId);
+                if (existing is null)
                 {
-                    JobId = item.JobId,
-                    Status = "not_applied",
-                    CreatedAt = DateTime.UtcNow
-                };
-                _context.Applications.Add(existing);
+                    existing = new Application
+                    {
+                        JobId = item.JobId,
+                        Status = "not_applied",
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.Applications.Add(existing);
+                }
+
+                existing.JobTitle = item.JobTitle;
+                existing.Company = item.Company;
+                existing.Location = item.Location;
+                existing.Salary = item.Salary;
+                existing.Description = item.Description;
+                existing.ApplyLink = item.ApplyLink;
+                existing.SearchKey = item.SearchKey;
+                existing.PostedTime = NormalizeToUtc(item.PostedTime);
+                existing.Source = item.Source;
+
+                existing.MatchingScore = _matchingService.CalculateScore(resumeText, existing.JobTitle, existing.Description, existing.SearchKey);
+                updated.Add(existing);
             }
 
-            existing.JobTitle = item.JobTitle;
-            existing.Company = item.Company;
-            existing.Location = item.Location;
-            existing.Salary = item.Salary;
-            existing.Description = item.Description;
-            existing.ApplyLink = item.ApplyLink;
-            existing.SearchKey = item.SearchKey;
-            existing.PostedTime = NormalizeToUtc(item.PostedTime);
-            existing.Source = item.Source;
-
-            existing.MatchingScore = _matchingService.CalculateScore(resumeText, existing.JobTitle, existing.Description, existing.SearchKey);
-            updated.Add(existing);
+            await _context.SaveChangesAsync();
+            return Ok(updated.Select(app => app.ToResponse()));
         }
+        catch (Exception e)
+        {
 
-        await _context.SaveChangesAsync();
-        return Ok(updated.Select(app => app.ToResponse()));
+            return BadRequest(e.Message);
+        }
+       
+
     }
 
     [HttpPost("{applicationId:int}/apply")]
