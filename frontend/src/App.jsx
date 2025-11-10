@@ -1,0 +1,169 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import ApplicationsTable from './components/ApplicationsTable.jsx';
+import CompaniesTable from './components/CompaniesTable.jsx';
+import Filters from './components/Filters.jsx';
+import ResumeUpload from './components/ResumeUpload.jsx';
+import {
+  getApplications,
+  getCompanies,
+  getResume,
+  markApplicationAsApplied,
+  uploadResume,
+} from './services/api.js';
+
+const DEFAULT_FILTERS = {
+  status: 'not_applied',
+  source: 'all',
+  timeframe: 'all',
+  sort: 'recent',
+};
+
+export default function App() {
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+
+  const [applications, setApplications] = useState([]);
+  const [applicationsLoading, setApplicationsLoading] = useState(false);
+  const [applicationsError, setApplicationsError] = useState('');
+
+  const [resume, setResume] = useState(null);
+  const [resumeLoading, setResumeLoading] = useState(true);
+  const [resumeError, setResumeError] = useState('');
+  const [resumeUploading, setResumeUploading] = useState(false);
+
+  const [companies, setCompanies] = useState([]);
+  const [companiesLoading, setCompaniesLoading] = useState(false);
+  const [companiesError, setCompaniesError] = useState('');
+
+  const sourceOptions = useMemo(() => {
+    const options = new Set(['all']);
+    applications.forEach((application) => {
+      if (application.source) {
+        options.add(application.source);
+      }
+    });
+    if (filters.source !== 'all' && filters.source) {
+      options.add(filters.source);
+    }
+    return Array.from(options);
+  }, [applications, filters.source]);
+
+  const refreshApplications = useCallback(async () => {
+    setApplicationsLoading(true);
+    setApplicationsError('');
+    try {
+      const data = (await getApplications(filters)) ?? [];
+      setApplications(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(error);
+      setApplications([]);
+      setApplicationsError(error instanceof Error ? error.message : 'Unable to load applications.');
+    } finally {
+      setApplicationsLoading(false);
+    }
+  }, [filters]);
+
+  const refreshResume = useCallback(async () => {
+    setResumeLoading(true);
+    setResumeError('');
+    try {
+      const data = await getResume();
+      setResume(data);
+    } catch (error) {
+      console.error(error);
+      setResume(null);
+      setResumeError(error instanceof Error ? error.message : 'Unable to load resume details.');
+    } finally {
+      setResumeLoading(false);
+    }
+  }, []);
+
+  const refreshCompanies = useCallback(async () => {
+    setCompaniesLoading(true);
+    setCompaniesError('');
+    try {
+      const data = (await getCompanies()) ?? [];
+      setCompanies(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(error);
+      setCompanies([]);
+      setCompaniesError(error instanceof Error ? error.message : 'Unable to load companies.');
+    } finally {
+      setCompaniesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshResume();
+    refreshCompanies();
+  }, [refreshResume, refreshCompanies]);
+
+  useEffect(() => {
+    refreshApplications();
+  }, [refreshApplications]);
+
+  const handleFilterChange = (name, value) => {
+    setFilters((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleResumeUpload = async (file) => {
+    setResumeUploading(true);
+    setResumeError('');
+    try {
+      const data = await uploadResume(file);
+      setResume(data);
+      await refreshApplications();
+    } catch (error) {
+      console.error(error);
+      setResumeError(error instanceof Error ? error.message : 'Failed to upload resume.');
+      throw error;
+    } finally {
+      setResumeUploading(false);
+      setResumeLoading(false);
+    }
+  };
+
+  const handleApply = async (application) => {
+    const confirmed = window.confirm(
+      'Open the apply link and move this job to the applied list? This action cannot be undone.',
+    );
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await markApplicationAsApplied(application.id);
+      window.open(application.apply_link, '_blank', 'noopener');
+      await refreshApplications();
+      await refreshCompanies();
+    } catch (error) {
+      console.error(error);
+      window.alert('Unable to mark application as applied. Please try again.');
+    }
+  };
+
+  return (
+    <div className="app-shell">
+      <header className="app-header">
+        <h1>HiringCafe Job Watcher</h1>
+      </header>
+      <main className="app-main">
+        <ResumeUpload
+          resume={resume}
+          isLoading={resumeLoading}
+          isUploading={resumeUploading}
+          error={resumeError}
+          onUpload={handleResumeUpload}
+        />
+        <div className="card">
+          <Filters filters={filters} sourceOptions={sourceOptions} onChange={handleFilterChange} />
+        </div>
+        <ApplicationsTable
+          applications={applications}
+          isLoading={applicationsLoading}
+          error={applicationsError}
+          onApply={handleApply}
+        />
+        <CompaniesTable companies={companies} isLoading={companiesLoading} error={companiesError} />
+      </main>
+    </div>
+  );
+}
