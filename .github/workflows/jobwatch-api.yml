@@ -39,12 +39,16 @@ jobs:
         with:
           dotnet-version: ${{ env.SWASHBUCKLE_DOTNET_CORE_VERSION }}
 
+      - name: Debug: Verify folder structure
+        run: dir
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore JobWatcher.Api.csproj
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: Build
-        run: dotnet build --configuration ${{ env.CONFIGURATION }} --no-restore
+        run: dotnet build JobWatcher.Api.csproj --configuration ${{ env.CONFIGURATION }} --no-restore
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: Test
@@ -52,7 +56,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: Publish
-        run: dotnet publish --configuration ${{ env.CONFIGURATION }} --no-build --output ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        run: dotnet publish JobWatcher.Api.csproj --configuration ${{ env.CONFIGURATION }} --no-build --output ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
       # --- Swashbuckle CLI setup and verification ---
@@ -68,9 +72,11 @@ jobs:
       - name: Generate Open API Specification Document
         run: |
           $env:PATH += ";C:\Users\runneradmin\.dotnet\tools"
-          swagger tofile --output "${{ env.API_IMPORT_SPECIFICATION_PATH }}" "${{ env.API_IMPORT_DLL }}" "${{ env.API_IMPORT_VERSION }}" --startupAssembly "${{ env.API_IMPORT_DLL }}"
+          swagger tofile --output "${{ env.API_IMPORT_SPECIFICATION_PATH }}" "${{ env.API_IMPORT_DLL }}" "${{ env.API_IMPORT_VERSION }}" --no-build --startupAssembly "${{ env.API_IMPORT_DLL }}"
         shell: pwsh
         working-directory: ${{ env.WORKING_DIRECTORY }}
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
