@@ -26,7 +26,8 @@ public class ApplicationsController : ControllerBase
         [FromQuery(Name = "status")] string? status,
         [FromQuery(Name = "source")] string? source,
         [FromQuery(Name = "timeframe")] string? timeframe,
-        [FromQuery(Name = "sort")] string? sort)
+        [FromQuery(Name = "sort")] string? sort,
+        [FromQuery(Name = "keyword")] string? keyword)
     {
         var query = _context.Applications.AsQueryable();
 
@@ -41,6 +42,13 @@ public class ApplicationsController : ControllerBase
             query = query.Where(app => app.Source == source);
         }
 
+        if (!string.IsNullOrWhiteSpace(keyword) && !string.Equals(keyword, "all", StringComparison.OrdinalIgnoreCase))
+        {
+            var trimmedKeyword = keyword.Trim();
+            var loweredKeyword = trimmedKeyword.ToLowerInvariant();
+            query = query.Where(app => app.SearchKey != null && app.SearchKey.ToLower().Contains(loweredKeyword));
+        }
+
         query = ApplyTimeframeFilter(query, timeframe);
 
         var descending = string.IsNullOrWhiteSpace(sort) || string.Equals(sort, "recent", StringComparison.OrdinalIgnoreCase) || string.Equals(sort, "desc", StringComparison.OrdinalIgnoreCase);
@@ -50,6 +58,27 @@ public class ApplicationsController : ControllerBase
 
         var results = await query.AsNoTracking().ToListAsync();
         return Ok(results.Select(app => app.ToResponse()));
+    }
+
+    [HttpGet("keywords")]
+    [ProducesResponseType(typeof(IEnumerable<string>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<string>>> GetKeywords()
+    {
+        var rawKeywords = await _context.Applications
+            .AsNoTracking()
+            .Where(app => !string.IsNullOrEmpty(app.SearchKey))
+            .Select(app => app.SearchKey!)
+            .ToListAsync();
+
+        var keywords = rawKeywords
+            .SelectMany(value => value.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries))
+            .Select(keyword => keyword.Trim())
+            .Where(keyword => !string.IsNullOrEmpty(keyword))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(keyword => keyword, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return Ok(keywords);
     }
 
     [HttpPost]

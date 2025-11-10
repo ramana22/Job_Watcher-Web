@@ -6,7 +6,8 @@ A lightweight web dashboard and ASP.NET Core REST API for aggregating job applic
 
 - **API ingestion** – `POST /api/applications` accepts the JSON payload produced by the HiringCafe job watcher and stores or updates records by `job_id`.
 - **Resume matching** – Upload a resume once and reuse it to compute application tracking system (ATS)-style keyword overlap scores.
-- **Filtering & sorting** – View applications in a table with filters for status, source, and posting date windows (24 hours, 3 days, 5 days) plus sort options.
+- **Filtering & sorting** – View applications in a table with filters for status, source, keyword, and posting date windows (24 hours, 3 days, 5 days) plus sort options.
+- **Pagination & search** – Paginated application and company tables, keyword-aware dropdowns sourced from the API, and instant company search to narrow large datasets quickly.
 - **Apply confirmation** – Opening the apply link prompts for confirmation and marks the application as "Applied" when confirmed.
 - **Company directory** – Automatically aggregates a list of companies and their career site URLs from the stored applications.
 - **SQL Server schema** – `sql/create_tables.sql` provides scripts to provision equivalent tables in Microsoft SQL Server.

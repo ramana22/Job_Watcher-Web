@@ -5,6 +5,7 @@ import Filters from './components/Filters.jsx';
 import ResumeUpload from './components/ResumeUpload.jsx';
 import {
   getApplications,
+  getApplicationKeywords,
   getCompanies,
   getResume,
   markApplicationAsApplied,
@@ -16,7 +17,11 @@ const DEFAULT_FILTERS = {
   source: 'all',
   timeframe: 'all',
   sort: 'recent',
+  keyword: 'all',
 };
+
+const APPLICATIONS_PER_PAGE = 10;
+const COMPANIES_PER_PAGE = 10;
 
 export default function App() {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -24,6 +29,8 @@ export default function App() {
   const [applications, setApplications] = useState([]);
   const [applicationsLoading, setApplicationsLoading] = useState(false);
   const [applicationsError, setApplicationsError] = useState('');
+
+  const [applicationsPage, setApplicationsPage] = useState(1);
 
   const [resume, setResume] = useState(null);
   const [resumeLoading, setResumeLoading] = useState(true);
@@ -33,6 +40,13 @@ export default function App() {
   const [companies, setCompanies] = useState([]);
   const [companiesLoading, setCompaniesLoading] = useState(false);
   const [companiesError, setCompaniesError] = useState('');
+
+  const [companiesPage, setCompaniesPage] = useState(1);
+  const [companySearch, setCompanySearch] = useState('');
+
+  const [keywordOptions, setKeywordOptions] = useState(['all']);
+  const [keywordsLoading, setKeywordsLoading] = useState(false);
+  const [keywordsError, setKeywordsError] = useState('');
 
   const [pendingApplication, setPendingApplication] = useState(null);
   const [showApplyPrompt, setShowApplyPrompt] = useState(false);
@@ -97,12 +111,32 @@ export default function App() {
     return Array.from(options);
   }, [applications, filters.source]);
 
+  const refreshKeywords = useCallback(async () => {
+    setKeywordsLoading(true);
+    setKeywordsError('');
+    try {
+      const data = (await getApplicationKeywords()) ?? [];
+      const normalized = Array.isArray(data)
+        ? data.filter((item) => typeof item === 'string' && item.trim().length > 0)
+        : [];
+      normalized.sort((a, b) => a.localeCompare(b));
+      setKeywordOptions(['all', ...normalized]);
+    } catch (error) {
+      console.error(error);
+      setKeywordOptions(['all']);
+      setKeywordsError('Unable to load keywords.');
+    } finally {
+      setKeywordsLoading(false);
+    }
+  }, []);
+
   const refreshApplications = useCallback(async () => {
     setApplicationsLoading(true);
     setApplicationsError('');
     try {
       const data = (await getApplications(filters)) ?? [];
       setApplications(Array.isArray(data) ? data : []);
+      await refreshKeywords();
     } catch (error) {
       console.error(error);
       setApplications([]);
@@ -110,7 +144,7 @@ export default function App() {
     } finally {
       setApplicationsLoading(false);
     }
-  }, [filters]);
+  }, [filters, refreshKeywords]);
 
   const refreshResume = useCallback(async () => {
     setResumeLoading(true);
@@ -153,6 +187,9 @@ export default function App() {
 
   const handleFilterChange = (name, value) => {
     setFilters((current) => ({ ...current, [name]: value }));
+    if (name !== 'sort') {
+      setApplicationsPage(1);
+    }
   };
 
   const handleResumeUpload = async (file) => {
@@ -209,6 +246,65 @@ export default function App() {
     setPendingApplication(null);
   };
 
+  useEffect(() => {
+    if (filters.keyword !== 'all' && !keywordOptions.some((keyword) => keyword.toLowerCase() === filters.keyword.toLowerCase())) {
+      setFilters((current) => ({ ...current, keyword: 'all' }));
+      setApplicationsPage(1);
+    }
+  }, [filters.keyword, keywordOptions]);
+
+  const applicationPageCount = useMemo(() => {
+    return Math.max(1, Math.ceil(applications.length / APPLICATIONS_PER_PAGE));
+  }, [applications.length]);
+
+  useEffect(() => {
+    if (applicationsPage > applicationPageCount) {
+      setApplicationsPage(applicationPageCount);
+    }
+  }, [applicationsPage, applicationPageCount]);
+
+  const paginatedApplications = useMemo(() => {
+    if (!applications.length) {
+      return [];
+    }
+    const start = (applicationsPage - 1) * APPLICATIONS_PER_PAGE;
+    return applications.slice(start, start + APPLICATIONS_PER_PAGE);
+  }, [applications, applicationsPage]);
+
+  const filteredCompanies = useMemo(() => {
+    if (!companySearch.trim()) {
+      return companies;
+    }
+    const search = companySearch.trim().toLowerCase();
+    return companies.filter((company) => {
+      const name = company.company?.toLowerCase() ?? '';
+      const career = company.career_site?.toLowerCase() ?? '';
+      return name.includes(search) || career.includes(search);
+    });
+  }, [companies, companySearch]);
+
+  const companyPageCount = useMemo(() => {
+    return Math.max(1, Math.ceil(filteredCompanies.length / COMPANIES_PER_PAGE));
+  }, [filteredCompanies.length]);
+
+  useEffect(() => {
+    if (companiesPage > companyPageCount) {
+      setCompaniesPage(companyPageCount);
+    }
+  }, [companiesPage, companyPageCount]);
+
+  useEffect(() => {
+    setCompaniesPage(1);
+  }, [companySearch]);
+
+  const paginatedCompanies = useMemo(() => {
+    if (!filteredCompanies.length) {
+      return [];
+    }
+    const start = (companiesPage - 1) * COMPANIES_PER_PAGE;
+    return filteredCompanies.slice(start, start + COMPANIES_PER_PAGE);
+  }, [filteredCompanies, companiesPage]);
+
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -223,15 +319,38 @@ export default function App() {
           onUpload={handleResumeUpload}
         />
         <div className="card">
-          <Filters filters={filters} sourceOptions={sourceOptions} onChange={handleFilterChange} />
+          <Filters
+            filters={filters}
+            sourceOptions={sourceOptions}
+            keywordOptions={keywordOptions}
+            keywordsLoading={keywordsLoading}
+            keywordsError={keywordsError}
+            onChange={handleFilterChange}
+          />
         </div>
         <ApplicationsTable
-          applications={applications}
+          applications={paginatedApplications}
+          totalCount={applications.length}
           isLoading={applicationsLoading}
           error={applicationsError}
+          currentPage={applicationsPage}
+          pageCount={applicationPageCount}
+          pageSize={APPLICATIONS_PER_PAGE}
+          onPageChange={setApplicationsPage}
           onApply={handleApply}
         />
-        <CompaniesTable companies={companies} isLoading={companiesLoading} error={companiesError} />
+        <CompaniesTable
+          companies={paginatedCompanies}
+          totalCount={filteredCompanies.length}
+          isLoading={companiesLoading}
+          error={companiesError}
+          search={companySearch}
+          onSearchChange={setCompanySearch}
+          currentPage={companiesPage}
+          pageCount={companyPageCount}
+          pageSize={COMPANIES_PER_PAGE}
+          onPageChange={setCompaniesPage}
+        />
       </main>
       {showApplyPrompt && pendingApplication ? (
         <div className="modal-backdrop" role="presentation">

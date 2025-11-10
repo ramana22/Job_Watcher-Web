@@ -16,7 +16,9 @@ const SORT_OPTIONS = [
   { value: 'oldest', label: 'Oldest First' },
 ];
 
-export default function Filters({ filters, sourceOptions, onChange }) {
+export default function Filters({ filters, sourceOptions, keywordOptions, keywordsLoading, keywordsError, onChange }) {
+  const keywordList = Array.isArray(keywordOptions) && keywordOptions.length > 0 ? keywordOptions : ['all'];
+
   return (
     <div className="filters">
       <label className="filter-group">
@@ -38,6 +40,22 @@ export default function Filters({ filters, sourceOptions, onChange }) {
             </option>
           ))}
         </select>
+      </label>
+      <label className="filter-group">
+        Keyword
+        <select value={filters.keyword ?? 'all'} onChange={(event) => onChange('keyword', event.target.value)}>
+          {keywordList.map((keyword) => (
+            <option key={keyword} value={keyword}>
+              {keyword === 'all' ? 'All Keywords' : keyword}
+            </option>
+          ))}
+        </select>
+        {keywordsLoading ? <span className="helper-text">Loading keywords…</span> : null}
+        {keywordsError ? (
+          <span className="helper-text" role="alert">
+            {keywordsError}
+          </span>
+        ) : null}
       </label>
       <label className="filter-group">
         Posted
