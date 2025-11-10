@@ -29,7 +29,7 @@ export default function ApplicationsTable({ applications, isLoading, error, onAp
         <table>
           <thead>
             <tr>
-              <th className="cell-small">Job ID</th>
+              {/* <th className="cell-small">Job ID</th> */}
               <th>Job Title</th>
               <th>Company</th>
               <th>Location</th>
@@ -67,7 +67,7 @@ export default function ApplicationsTable({ applications, isLoading, error, onAp
                 const key = application.id ?? `${application.job_id}-${application.source ?? 'source'}`;
                 return (
                   <tr key={key}>
-                    <td className="cell-small">{application.job_id}</td>
+                    {/* <td className="cell-small">{application.job_id}</td> */}
                     <td>{application.job_title}</td>
                     <td>{application.company}</td>
                     <td>{application.location ?? '—'}</td>

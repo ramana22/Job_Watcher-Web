@@ -1,4 +1,4 @@
-using JobWatcher.Api.Data;
+﻿using JobWatcher.Api.Data;
 using JobWatcher.Api.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,17 +20,36 @@ public class CompaniesController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<CompanyResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<CompanyResponse>>> GetCompanies()
     {
-        var companies = await _context.Applications
-            .AsNoTracking()
-            .Where(app => !string.IsNullOrEmpty(app.Company))
-            .GroupBy(app => app.Company)
-            .Select(group => new CompanyResponse(
-                group.Key,
-                group.Select(app => app.ApplyLink).FirstOrDefault(link => !string.IsNullOrWhiteSpace(link))
-            ))
-            .OrderBy(entry => entry.Company)
-            .ToListAsync();
+        try
+        {
 
-        return Ok(companies);
+            // 1️⃣ Load relevant records from DB (simple SQL query)
+            var allApps = await _context.Applications
+                .AsNoTracking()
+                .Where(a => !string.IsNullOrEmpty(a.Company))
+                .Select(a => new { a.Company, a.ApplyLink }) // only select what you need
+                .ToListAsync();
+
+            // 2️⃣ Do grouping and picking first ApplyLink in memory
+            var companies = allApps
+                .GroupBy(a => a.Company)
+                .Select(g => new CompanyResponse(
+                    g.Key,
+                    g.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a.ApplyLink))?.ApplyLink ?? string.Empty
+                ))
+                .OrderBy(c => c.Company)
+                .ToList();
+
+            return Ok(companies);
+
+
+        }
+        catch (Exception e)
+        {
+
+            return BadRequest(e);
+        }
+
     }
+
 }
