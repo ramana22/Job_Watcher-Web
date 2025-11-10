@@ -4,16 +4,20 @@ GO
 USE JobWatcher;
 GO
 
+-- Drop existing tables safely
 IF OBJECT_ID('applications', 'U') IS NOT NULL
 BEGIN
     DROP TABLE applications;
 END;
+GO
 
 IF OBJECT_ID('resumes', 'U') IS NOT NULL
 BEGIN
     DROP TABLE resumes;
 END;
+GO
 
+-- Create applications table
 CREATE TABLE applications (
     id INT IDENTITY(1,1) PRIMARY KEY,
     job_id NVARCHAR(100) NOT NULL UNIQUE,
@@ -30,12 +34,15 @@ CREATE TABLE applications (
     status NVARCHAR(50) NOT NULL DEFAULT 'not_applied',
     created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
 );
+GO
 
 CREATE INDEX IX_applications_job_id ON applications(job_id);
 CREATE INDEX IX_applications_source ON applications(source);
 CREATE INDEX IX_applications_status ON applications(status);
 CREATE INDEX IX_applications_posted_time ON applications(posted_time);
+GO
 
+-- Create resumes table
 CREATE TABLE resumes (
     id INT IDENTITY(1,1) PRIMARY KEY,
     filename NVARCHAR(255) NOT NULL,
@@ -43,11 +50,12 @@ CREATE TABLE resumes (
     text_content NVARCHAR(MAX) NOT NULL,
     uploaded_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
 );
+GO
 
+-- Drop and recreate view in a new batch
 IF OBJECT_ID('CompanyDirectory', 'V') IS NOT NULL
-BEGIN
     DROP VIEW CompanyDirectory;
-END;
+GO
 
 CREATE VIEW CompanyDirectory AS
 SELECT
