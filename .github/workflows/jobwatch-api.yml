@@ -1,5 +1,4 @@
 name: JobWatcherApi
-
 on:
   push:
     branches:
@@ -7,7 +6,7 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: jobwatch-api
-  AZURE_WEBAPP_PACKAGE_PATH: backend/JobWatcher.Api/publish
+  AZURE_WEBAPP_PACKAGE_PATH: JobWatcher.Api/publish
   AZURE_APIM_RESOURCE_PATH: /
   AZURE_APIM_RESOURCEGROUP: jobwatch-api_group
   AZURE_APIM_SERVICENAME: JobWatcherApiapi
@@ -15,21 +14,18 @@ env:
   AZURE_APIM_APPSERVICEURL: https://jobwatch-api-g6a3cjenesbna5gv.canadacentral-01.azurewebsites.net
   SWASHBUCLE_ASPNET_CORE_CLI_PACKAGE_VERSION: 5.6.3
   SWASHBUCKLE_DOTNET_CORE_VERSION: 3.1.x
-  API_IMPORT_SPECIFICATION_PATH: backend/JobWatcher.Api/publish/swagger.json
-  API_IMPORT_DLL: backend/JobWatcher.Api/bin/Release/net8.0/JobWatcher.Api.dll
+  API_IMPORT_SPECIFICATION_PATH: JobWatcher.Api/publish/swagger.json
+  API_IMPORT_DLL: JobWatcher.Api/bin/Release/net8.0/JobWatcher.Api.dll
   API_IMPORT_VERSION: v1
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 8.0.x
-  WORKING_DIRECTORY: backend/JobWatcher.Api
+  WORKING_DIRECTORY: JobWatcher.Api
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Debug: Verify folder structure
-        run: dir
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
@@ -57,16 +53,16 @@ jobs:
         run: dotnet publish --configuration ${{ env.CONFIGURATION }} --no-build --output ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
-      - name: Install Swashbuckle CLI
+      - name: Install Swashbuckle CLI .NET Global Tool
         run: dotnet tool install --global Swashbuckle.AspNetCore.Cli --version ${{ env.SWASHBUCLE_ASPNET_CORE_CLI_PACKAGE_VERSION }}
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
-      - name: Generate OpenAPI Specification
+      - name: Generate Open API Specification Document
         run: swagger tofile --output "${{ env.API_IMPORT_SPECIFICATION_PATH }}" "${{ env.API_IMPORT_DLL }}" "${{ env.API_IMPORT_VERSION }}"
         env:
           PATH: $PATH:/home/runner/.dotnet/tools
 
-      - name: Upload Artifact for Deploy
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: webapp
@@ -76,7 +72,7 @@ jobs:
     runs-on: windows-latest
     needs: build
     steps:
-      - name: Download Artifact from Build Job
+      - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
           name: webapp
@@ -87,7 +83,7 @@ jobs:
         with:
           creds: ${{ secrets.JobWatcherApiapi_SPN }}
 
-      - name: Deploy to Azure Web App
+      - name: Deploy to Azure WebApp
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
