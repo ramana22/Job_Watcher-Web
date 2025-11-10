@@ -7,7 +7,6 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: jobwatch-api
-  AZURE_WEBAPP_PACKAGE_PATH: backend/JobWatcher.Api/publish
   AZURE_APIM_RESOURCE_PATH: /
   AZURE_APIM_RESOURCEGROUP: jobwatch-api_group
   AZURE_APIM_SERVICENAME: JobWatcherApiapi
@@ -15,13 +14,13 @@ env:
   AZURE_APIM_APPSERVICEURL: https://jobwatch-api-g6a3cjenesbna5gv.canadacentral-01.azurewebsites.net
   SWASHBUCLE_ASPNET_CORE_CLI_PACKAGE_VERSION: 5.6.3
   SWASHBUCKLE_DOTNET_CORE_VERSION: 3.1.x
-  API_IMPORT_SPECIFICATION_PATH: backend/JobWatcher.Api/publish/swagger.json
-  API_IMPORT_DLL: backend/JobWatcher.Api/bin/Release/net8.0/JobWatcher.Api.dll
-  API_IMPORT_VERSION: v1
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 8.0.x
   WORKING_DIRECTORY: backend/JobWatcher.Api
   ASPNETCORE_ENVIRONMENT: Development
+  API_IMPORT_VERSION: v1
+  API_IMPORT_DLL: backend/JobWatcher.Api/bin/Release/net8.0/JobWatcher.Api.dll
+  API_IMPORT_SPECIFICATION_PATH: backend/JobWatcher.Api/publish/swagger.json
 
 jobs:
   build:
@@ -39,6 +38,9 @@ jobs:
         with:
           dotnet-version: ${{ env.SWASHBUCKLE_DOTNET_CORE_VERSION }}
 
+      - name: Debug: Verify repo root
+        run: dir
+
       - name: Restore
         run: dotnet restore JobWatcher.Api.csproj
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -52,33 +54,36 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
       - name: Publish
-        run: dotnet publish JobWatcher.Api.csproj --configuration ${{ env.CONFIGURATION }} --no-build --output ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        run: |
+          dotnet publish JobWatcher.Api.csproj --configuration ${{ env.CONFIGURATION }} --no-build --output backend/JobWatcher.Api/publish
+          dir backend/JobWatcher.Api/publish
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
-      # --- Swashbuckle CLI setup and verification ---
+      # --- Swashbuckle CLI setup and Swagger generation ---
       - name: Install Swashbuckle CLI .NET Global Tool
         run: dotnet tool install --global Swashbuckle.AspNetCore.Cli --version ${{ env.SWASHBUCLE_ASPNET_CORE_CLI_PACKAGE_VERSION }}
 
-      # - name: Verify Swagger CLI Installation
-      #   run: |
-      #     $env:PATH += ";C:\Users\runneradmin\.dotnet\tools"
-      #     swagger --version
-      #   shell: pwsh
+      - name: Verify Swagger CLI Installation
+        run: |
+          $env:PATH += ";C:\Users\runneradmin\.dotnet\tools"
+          swagger --version
+        shell: pwsh
 
-      # - name: Generate Open API Specification Document
-      #   run: |
-      #     $env:PATH += ";C:\Users\runneradmin\.dotnet\tools"
-      #     swagger tofile --output "${{ env.API_IMPORT_SPECIFICATION_PATH }}" "${{ env.API_IMPORT_DLL }}" "${{ env.API_IMPORT_VERSION }}" --no-build --startupAssembly "${{ env.API_IMPORT_DLL }}"
-      #   shell: pwsh
-      #   working-directory: ${{ env.WORKING_DIRECTORY }}
-      #   env:
-      #     ASPNETCORE_ENVIRONMENT: Development
+      - name: Generate Open API Specification Document
+        run: |
+          $env:PATH += ";C:\Users\runneradmin\.dotnet\tools"
+          swagger tofile --output "${{ env.API_IMPORT_SPECIFICATION_PATH }}" "${{ env.API_IMPORT_DLL }}" "${{ env.API_IMPORT_VERSION }}" --no-build --startupAssembly "${{ env.API_IMPORT_DLL }}"
+        shell: pwsh
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: webapp
-          path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          path: backend/JobWatcher.Api/publish/**
+          if-no-files-found: error
 
   deploy:
     runs-on: windows-latest
@@ -88,7 +93,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: webapp
-          path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          path: ./webapp
 
       - name: Azure Login
         uses: azure/login@v2
@@ -99,7 +104,7 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          package: ./webapp
           publish-profile: ${{ secrets.jobwatch_api_E56F }}
 
       - name: Import API into Azure API Management
