@@ -357,6 +357,8 @@ export default function App() {
       pendingApplicationRef.current = null;
       setPendingApplication(null);
       setShowApplyPrompt(false);
+
+      await Promise.all([refreshResume(), refreshCompanies(), refreshApplications()]);
     } catch (error) {
       console.error(error);
       clearStoredToken();

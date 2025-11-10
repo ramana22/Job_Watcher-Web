@@ -5,6 +5,7 @@ const API_BASE_URL =
 
 
 const TOKEN_STORAGE_KEY = 'jobWatcherAuthToken';
+let inMemoryToken = null;
 
 export class ApiError extends Error {
   constructor(message, status) {
@@ -20,9 +21,13 @@ function hasStorage() {
 
 export function getStoredToken() {
   if (!hasStorage()) {
-    return null;
+    return inMemoryToken;
   }
-  return window.localStorage.getItem(TOKEN_STORAGE_KEY);
+  const stored = window.localStorage.getItem(TOKEN_STORAGE_KEY);
+  if (stored) {
+    inMemoryToken = stored;
+  }
+  return stored;
 }
 
 export function storeToken(token) {
@@ -40,9 +45,11 @@ export function storeToken(token) {
 
 export function clearStoredToken() {
   if (!hasStorage()) {
+    inMemoryToken = null;
     return;
   }
   window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+  inMemoryToken = null;
 }
 
 function toQueryString(filters) {

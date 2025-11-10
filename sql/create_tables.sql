@@ -71,7 +71,16 @@ CREATE TABLE resumes (
     text_content NVARCHAR(MAX) NOT NULL,
     uploaded_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
 );
-GO
+
+CREATE TABLE users (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    username NVARCHAR(100) NOT NULL,
+    normalized_username NVARCHAR(100) NOT NULL UNIQUE,
+    password_hash NVARCHAR(512) NOT NULL,
+    created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+);
+
+CREATE UNIQUE INDEX IX_users_normalized_username ON users(normalized_username);
 
 -- ========================================
 -- COMPANY DIRECTORY VIEW
