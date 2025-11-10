@@ -1,7 +1,8 @@
 const API_BASE_URL =
   window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
-    ? 'http://localhost:5000'
+    ? 'https://localhost:49682' // ✅ match your ASP.NET port + https
     : window.location.origin;
+
 
 const TOKEN_STORAGE_KEY = 'jobWatcherAuthToken';
 
@@ -25,11 +26,17 @@ export function getStoredToken() {
 }
 
 export function storeToken(token) {
-  if (!hasStorage()) {
-    return;
+  if (!hasStorage()) return;
+
+  try {
+    console.log("Saving token:", token);
+    window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    console.log("Token stored in localStorage:", window.localStorage.getItem(TOKEN_STORAGE_KEY));
+  } catch (err) {
+    console.error("Failed to store token:", err);
   }
-  window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
 }
+
 
 export function clearStoredToken() {
   if (!hasStorage()) {

@@ -11,7 +11,6 @@ namespace JobWatcher.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class ApplicationsController : ControllerBase
 {
     private readonly JobWatcherContext _context;
@@ -23,6 +22,7 @@ public class ApplicationsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize]
     [ProducesResponseType(typeof(IEnumerable<ApplicationResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<ApplicationResponse>>> GetApplications(
         [FromQuery(Name = "status")] string? status,
@@ -71,6 +71,7 @@ public class ApplicationsController : ControllerBase
     }
 
     [HttpGet("keywords")]
+    [Authorize]
     [ProducesResponseType(typeof(IEnumerable<string>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<string>>> GetKeywords()
     {

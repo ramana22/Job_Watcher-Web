@@ -329,6 +329,7 @@ export default function App() {
     try {
       const action = mode === 'register' ? register : login;
       const response = await action(credentials);
+      console.log(response)
       if (!response || typeof response.token !== 'string') {
         throw new Error('Authentication response did not include a token.');
       }
