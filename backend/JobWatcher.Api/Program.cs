@@ -1,12 +1,13 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
+using System.Text.Json;
 using JobWatcher.Api.Data;
 using JobWatcher.Api.Models;
 using JobWatcher.Api.Services;
-using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +31,8 @@ var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)
 var validateIssuer = !string.IsNullOrWhiteSpace(jwtOptions.Issuer);
 var validateAudience = !string.IsNullOrWhiteSpace(jwtOptions.Audience);
 
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
 builder.Services
     .AddAuthentication(options =>
     {
@@ -38,6 +41,9 @@ builder.Services
     })
     .AddJwtBearer(options =>
     {
+        options.RequireHttpsMetadata = false;
+        options.SaveToken = true;
+        options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
@@ -47,7 +53,7 @@ builder.Services
             ValidIssuer = validateIssuer ? jwtOptions.Issuer : null,
             ValidAudience = validateAudience ? jwtOptions.Audience : null,
             ValidateLifetime = true,
-            ClockSkew = TimeSpan.FromMinutes(1)
+            ClockSkew = TimeSpan.FromMinutes(5)
         };
     });
 
