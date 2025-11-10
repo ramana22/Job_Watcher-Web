@@ -2,7 +2,7 @@ name: Build and deploy .NET Core application to Web App jobwatch-api with API Ma
 on:
   push:
     branches:
-    - main
+    - cicisetup
 env:
   AZURE_WEBAPP_NAME: jobwatch-api
   AZURE_WEBAPP_PACKAGE_PATH: JobWatcher.Api\publish
@@ -64,11 +64,11 @@ jobs:
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-        publish-profile: ${{ secrets.jobwatch_api_510B }}
+        publish-profile: ${{ secrets.jobwatch_api_9F08 }}
     - name: Azure Login
       uses: azure/login@v1
       with:
-        creds: ${{ secrets._SPN }}
+        creds: ${{ secrets.JobWatcherApiapi_SPN }}
     - name: Import API into Azure API Management
       run: az apim api import --path "${{ env.AZURE_APIM_RESOURCE_PATH }}" --resource-group "${{ env.AZURE_APIM_RESOURCEGROUP }}" --service-name "${{ env.AZURE_APIM_SERVICENAME }}" --api-id "${{ env.AZURE_APIM_API_ID }}" --service-url "${{ env.AZURE_APIM_APPSERVICEURL }}" --specification-path "${{ env.API_IMPORT_SPECIFICATION_PATH }}" --specification-format OpenApi --subscription-required false
     - name: logout
