@@ -14,6 +14,8 @@ const TIMEFRAME_OPTIONS = [
 const SORT_OPTIONS = [
   { value: 'recent', label: 'Most Recent' },
   { value: 'oldest', label: 'Oldest First' },
+  { value: 'matching_high', label: 'Matching Score (High → Low)' },
+  { value: 'matching_low', label: 'Matching Score (Low → High)' },
 ];
 
 export default function Filters({ filters, sourceOptions, keywordOptions, keywordsLoading, keywordsError, onChange }) {

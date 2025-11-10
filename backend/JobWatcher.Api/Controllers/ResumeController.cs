@@ -3,6 +3,7 @@ using JobWatcher.Api.Data;
 using JobWatcher.Api.DTOs;
 using JobWatcher.Api.Models;
 using JobWatcher.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +11,7 @@ namespace JobWatcher.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ResumeController : ControllerBase
 {
     private readonly JobWatcherContext _context;

@@ -3,6 +3,7 @@ using JobWatcher.Api.DTOs;
 using JobWatcher.Api.Extensions;
 using JobWatcher.Api.Models;
 using JobWatcher.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +11,7 @@ namespace JobWatcher.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ApplicationsController : ControllerBase
 {
     private readonly JobWatcherContext _context;
@@ -51,10 +53,18 @@ public class ApplicationsController : ControllerBase
 
         query = ApplyTimeframeFilter(query, timeframe);
 
-        var descending = string.IsNullOrWhiteSpace(sort) || string.Equals(sort, "recent", StringComparison.OrdinalIgnoreCase) || string.Equals(sort, "desc", StringComparison.OrdinalIgnoreCase);
-        query = descending
-            ? query.OrderByDescending(app => app.PostedTime)
-            : query.OrderBy(app => app.PostedTime);
+        var normalizedSort = string.IsNullOrWhiteSpace(sort) ? "recent" : sort.Trim().ToLowerInvariant();
+        query = normalizedSort switch
+        {
+            "oldest" => query.OrderBy(app => app.PostedTime),
+            "matching_low" or "matching_asc" or "score_low" or "matching_score_asc" => query
+                .OrderBy(app => app.MatchingScore)
+                .ThenByDescending(app => app.PostedTime),
+            "matching_high" or "matching_desc" or "score_high" or "matching_score" or "matching_score_desc" => query
+                .OrderByDescending(app => app.MatchingScore)
+                .ThenByDescending(app => app.PostedTime),
+            _ => query.OrderByDescending(app => app.PostedTime)
+        };
 
         var results = await query.AsNoTracking().ToListAsync();
         return Ok(results.Select(app => app.ToResponse()));

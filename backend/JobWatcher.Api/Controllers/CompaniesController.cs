@@ -1,5 +1,6 @@
-﻿using JobWatcher.Api.Data;
+using JobWatcher.Api.Data;
 using JobWatcher.Api.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,6 +8,7 @@ namespace JobWatcher.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class CompaniesController : ControllerBase
 {
     private readonly JobWatcherContext _context;

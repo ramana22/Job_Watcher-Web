@@ -6,7 +6,8 @@ A lightweight web dashboard and ASP.NET Core REST API for aggregating job applic
 
 - **API ingestion** – `POST /api/applications` accepts the JSON payload produced by the HiringCafe job watcher and stores or updates records by `job_id`.
 - **Resume matching** – Upload a resume once and reuse it to compute application tracking system (ATS)-style keyword overlap scores.
-- **Filtering & sorting** – View applications in a table with filters for status, source, keyword, and posting date windows (24 hours, 3 days, 5 days) plus sort options.
+- **Filtering & sorting** – View applications in a table with filters for status, source, keyword, and posting date windows (24 hours, 3 days, 5 days) plus sort options, including matching-score ordering.
+- **Authentication & authorization** – Protect the dashboard and API with JWT-backed login and registration endpoints.
 - **Pagination & search** – Paginated application and company tables, keyword-aware dropdowns sourced from the API, and instant company search to narrow large datasets quickly.
 - **Apply confirmation** – Opening the apply link prompts for confirmation and marks the application as "Applied" when confirmed.
 - **Company directory** – Automatically aggregates a list of companies and their career site URLs from the stored applications.
@@ -28,8 +29,9 @@ sql/               SQL Server schema scripts
 
 ## Running the API locally
 
-1. **Configure the connection string**
+1. **Configure application settings**
    - Update `backend/JobWatcher.Api/appsettings.json` with the correct SQL Server connection string. The default assumes a local SQL Server instance with the `sa` user.
+   - Provide a strong value for `Jwt:Key` (and optionally issuer/audience) so tokens can be signed and validated securely.
    - For quick smoke tests you can replace the provider in `Program.cs` with `UseInMemoryDatabase`, but the project ships configured for SQL Server.
 
 2. **Restore packages and build**
@@ -40,7 +42,7 @@ sql/               SQL Server schema scripts
    ```
 
 3. **Apply the SQL schema**
-   - Run the statements in `sql/create_tables.sql` against your SQL Server database to create the `applications` and `resumes` tables.
+   - Run the statements in `sql/create_tables.sql` against your SQL Server database to create the `applications`, `resumes`, and `users` tables.
 
 4. **Run the API**
    ```bash
@@ -62,33 +64,51 @@ The API listens on `https://localhost:5001` and `http://localhost:5000` by defau
    ```
 3. With the ASP.NET Core API running on http://localhost:5000, browse to the served dashboard.
 
+   The dashboard requires authentication. Use the "Register" toggle on the sign-in form (or the `/api/auth/register` endpoint) to create an account, then sign in to access application data.
+
 To produce a production bundle, run `npm run build` and deploy the generated assets from `frontend/dist/` to your preferred static host.
 
 ## Key API endpoints
 
 | Method | Endpoint | Description |
 | ------ | -------- | ----------- |
-| `GET`  | `/api/applications` | List applications with optional `status`, `source`, `timeframe`, and `sort` query parameters. |
+| `GET`  | `/api/applications` | List applications with optional `status`, `source`, `keyword`, `timeframe`, and `sort` (`recent`, `oldest`, `matching_high`, `matching_low`) query parameters. |
+| `GET`  | `/api/applications/keywords` | Return distinct keyword values derived from stored applications. |
 | `POST` | `/api/applications` | Bulk create or update applications from the HiringCafe watcher payload. |
 | `POST` | `/api/applications/{id}/apply` | Mark a single application as applied. |
 | `GET`  | `/api/resume` | Retrieve metadata about the most recently uploaded resume. |
 | `POST` | `/api/resume` | Upload a resume (UTF-8 text) and recompute matching scores. |
 | `GET`  | `/api/companies` | List companies and their derived career site URLs. |
+| `POST` | `/api/auth/register` | Register a new dashboard/API user and return a signed JWT. |
+| `POST` | `/api/auth/login` | Exchange valid credentials for a signed JWT. |
 | `GET`  | `/health` | Basic health check endpoint. |
+
+All endpoints except `/api/auth/*` and `/health` require an `Authorization: Bearer <token>` header.
 
 ## Integrating with the HiringCafe job watcher
 
-Configure the GitHub Actions workflow to send the fetched job JSON to the API:
+Configure the GitHub Actions workflow to authenticate and send the fetched job JSON to the API. Store the username and password for the Job Watcher account in repository secrets so the workflow can obtain a short-lived token before each upload:
 
 ```yaml
 - name: Push applications to Job Watcher Web
+  env:
+    API_BASE: ${{ secrets.JOB_WATCHER_API_URL }}
+    USERNAME: ${{ secrets.JOB_WATCHER_USERNAME }}
+    PASSWORD: ${{ secrets.JOB_WATCHER_PASSWORD }}
   run: |
-    curl -X POST "${{ secrets.JOB_WATCHER_API_URL }}/api/applications" \
+    TOKEN=$(curl -s -X POST "$API_BASE/api/auth/login" \
       -H "Content-Type: application/json" \
+      -d "{\"username\":\"$USERNAME\",\"password\":\"$PASSWORD\"}" | jq -r '.token')
+
+    curl -X POST "$API_BASE/api/applications" \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer $TOKEN" \
       -d "${RESPONSE_JSON}"
 ```
 
 Ensure the payload matches the schema consumed by `ApplicationCreateRequest` in `backend/JobWatcher.Api/DTOs/ApplicationDtos.cs`.
+
+The example uses [`jq`](https://stedolan.github.io/jq/) to extract the token—adapt the parsing step if your environment lacks that utility.
 
 ## Resume matching notes
 

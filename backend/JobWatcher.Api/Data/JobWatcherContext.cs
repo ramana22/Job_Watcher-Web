@@ -11,6 +11,7 @@ public class JobWatcherContext : DbContext
 
     public DbSet<Application> Applications => Set<Application>();
     public DbSet<Resume> Resumes => Set<Resume>();
+    public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -39,6 +40,16 @@ public class JobWatcherContext : DbContext
             entity.ToTable("resumes");
             entity.Property(e => e.Filename).HasMaxLength(255);
             entity.Property(e => e.UploadedAt).HasDefaultValueSql("GETUTCDATE()");
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.ToTable("users");
+            entity.HasIndex(e => e.NormalizedUsername).IsUnique();
+            entity.Property(e => e.Username).HasMaxLength(100);
+            entity.Property(e => e.NormalizedUsername).HasMaxLength(100);
+            entity.Property(e => e.PasswordHash).HasMaxLength(512);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
         });
     }
 }

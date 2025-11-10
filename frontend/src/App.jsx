@@ -1,14 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ApplicationsTable from './components/ApplicationsTable.jsx';
+import AuthForm from './components/AuthForm.jsx';
 import CompaniesTable from './components/CompaniesTable.jsx';
 import Filters from './components/Filters.jsx';
 import ResumeUpload from './components/ResumeUpload.jsx';
 import {
-  getApplications,
+  ApiError,
+  clearStoredToken,
   getApplicationKeywords,
+  getApplications,
   getCompanies,
   getResume,
+  getStoredToken,
+  login,
   markApplicationAsApplied,
+  register,
+  storeToken,
   uploadResume,
 } from './services/api.js';
 
@@ -22,8 +29,13 @@ const DEFAULT_FILTERS = {
 
 const APPLICATIONS_PER_PAGE = 10;
 const COMPANIES_PER_PAGE = 10;
+const SESSION_EXPIRED_MESSAGE = 'Your session has expired. Please sign in again.';
 
 export default function App() {
+  const [authToken, setAuthTokenState] = useState(() => getStoredToken());
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
+
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
   const [applications, setApplications] = useState([]);
@@ -58,6 +70,10 @@ export default function App() {
   }, [pendingApplication]);
 
   useEffect(() => {
+    if (!authToken) {
+      return undefined;
+    }
+
     const handleFocus = () => {
       if (pendingApplicationRef.current) {
         setShowApplyPrompt(true);
@@ -77,7 +93,7 @@ export default function App() {
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, []);
+  }, [authToken]);
 
   useEffect(() => {
     if (!showApplyPrompt) {
@@ -97,6 +113,34 @@ export default function App() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [showApplyPrompt]);
+
+  const handleLogout = useCallback((message = '') => {
+    clearStoredToken();
+    setAuthTokenState(null);
+    setAuthError(message);
+    setAuthLoading(false);
+    setFilters(DEFAULT_FILTERS);
+    setApplications([]);
+    setApplicationsError('');
+    setApplicationsLoading(false);
+    setApplicationsPage(1);
+    setResume(null);
+    setResumeError('');
+    setResumeLoading(false);
+    setResumeUploading(false);
+    setCompanies([]);
+    setCompaniesError('');
+    setCompaniesLoading(false);
+    setCompaniesPage(1);
+    setCompanySearch('');
+    setKeywordOptions(['all']);
+    setKeywordsError('');
+    setKeywordsLoading(false);
+    setPendingApplication(null);
+    pendingApplicationRef.current = null;
+    setShowApplyPrompt(false);
+    setApplyConfirmationLoading(false);
+  }, []);
 
   const sourceOptions = useMemo(() => {
     const options = new Set(['all']);
@@ -123,12 +167,16 @@ export default function App() {
       setKeywordOptions(['all', ...normalized]);
     } catch (error) {
       console.error(error);
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        handleLogout(SESSION_EXPIRED_MESSAGE);
+        return;
+      }
       setKeywordOptions(['all']);
       setKeywordsError('Unable to load keywords.');
     } finally {
       setKeywordsLoading(false);
     }
-  }, []);
+  }, [handleLogout]);
 
   const refreshApplications = useCallback(async () => {
     setApplicationsLoading(true);
@@ -139,12 +187,16 @@ export default function App() {
       await refreshKeywords();
     } catch (error) {
       console.error(error);
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        handleLogout(SESSION_EXPIRED_MESSAGE);
+        return;
+      }
       setApplications([]);
       setApplicationsError(error instanceof Error ? error.message : 'Unable to load applications.');
     } finally {
       setApplicationsLoading(false);
     }
-  }, [filters, refreshKeywords]);
+  }, [filters, refreshKeywords, handleLogout]);
 
   const refreshResume = useCallback(async () => {
     setResumeLoading(true);
@@ -154,12 +206,16 @@ export default function App() {
       setResume(data);
     } catch (error) {
       console.error(error);
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        handleLogout(SESSION_EXPIRED_MESSAGE);
+        return;
+      }
       setResume(null);
       setResumeError(error instanceof Error ? error.message : 'Unable to load resume details.');
     } finally {
       setResumeLoading(false);
     }
-  }, []);
+  }, [handleLogout]);
 
   const refreshCompanies = useCallback(async () => {
     setCompaniesLoading(true);
@@ -169,21 +225,31 @@ export default function App() {
       setCompanies(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error(error);
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        handleLogout(SESSION_EXPIRED_MESSAGE);
+        return;
+      }
       setCompanies([]);
       setCompaniesError(error instanceof Error ? error.message : 'Unable to load companies.');
     } finally {
       setCompaniesLoading(false);
     }
-  }, []);
+  }, [handleLogout]);
 
   useEffect(() => {
+    if (!authToken) {
+      return;
+    }
     refreshResume();
     refreshCompanies();
-  }, [refreshResume, refreshCompanies]);
+  }, [authToken, refreshResume, refreshCompanies]);
 
   useEffect(() => {
+    if (!authToken) {
+      return;
+    }
     refreshApplications();
-  }, [refreshApplications]);
+  }, [authToken, refreshApplications]);
 
   const handleFilterChange = (name, value) => {
     setFilters((current) => ({ ...current, [name]: value }));
@@ -201,8 +267,11 @@ export default function App() {
       await refreshApplications();
     } catch (error) {
       console.error(error);
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        handleLogout(SESSION_EXPIRED_MESSAGE);
+        return;
+      }
       setResumeError(error instanceof Error ? error.message : 'Failed to upload resume.');
-      throw error;
     } finally {
       setResumeUploading(false);
       setResumeLoading(false);
@@ -235,7 +304,11 @@ export default function App() {
       setPendingApplication(null);
     } catch (error) {
       console.error(error);
-      window.alert('Unable to mark application as applied. Please try again.');
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        handleLogout(SESSION_EXPIRED_MESSAGE);
+      } else {
+        window.alert(error instanceof Error ? error.message : 'Unable to mark application as applied. Please try again.');
+      }
     } finally {
       setApplyConfirmationLoading(false);
     }
@@ -244,6 +317,67 @@ export default function App() {
   const handleApplyDismiss = () => {
     setShowApplyPrompt(false);
     setPendingApplication(null);
+  };
+
+  const handleAuthModeChange = () => {
+    setAuthError('');
+  };
+
+  const handleAuthenticate = async (credentials, mode) => {
+    setAuthLoading(true);
+    setAuthError('');
+    try {
+      const action = mode === 'register' ? register : login;
+      const response = await action(credentials);
+      if (!response || typeof response.token !== 'string') {
+        throw new Error('Authentication response did not include a token.');
+      }
+
+      storeToken(response.token);
+      setAuthTokenState(response.token);
+      setFilters(DEFAULT_FILTERS);
+      setApplicationsPage(1);
+      setCompaniesPage(1);
+      setCompanySearch('');
+      setKeywordOptions(['all']);
+      setKeywordsError('');
+      setApplications([]);
+      setApplicationsError('');
+      setApplicationsLoading(true);
+      setCompanies([]);
+      setCompaniesError('');
+      setCompaniesLoading(true);
+      setResume(null);
+      setResumeError('');
+      setResumeLoading(true);
+      setKeywordsLoading(true);
+      setResumeUploading(false);
+      setApplyConfirmationLoading(false);
+      pendingApplicationRef.current = null;
+      setPendingApplication(null);
+      setShowApplyPrompt(false);
+    } catch (error) {
+      console.error(error);
+      clearStoredToken();
+      setAuthTokenState(null);
+      if (error instanceof ApiError) {
+        if (error.status === 401) {
+          setAuthError('Invalid username or password.');
+        } else if (error.status === 409) {
+          setAuthError('Username already exists.');
+        } else if (error.status === 400) {
+          setAuthError(error.message || 'Please provide a username and password.');
+        } else {
+          setAuthError(error.message || 'Authentication failed. Please try again.');
+        }
+      } else if (error instanceof Error) {
+        setAuthError(error.message);
+      } else {
+        setAuthError('Authentication failed. Please try again.');
+      }
+    } finally {
+      setAuthLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -305,10 +439,33 @@ export default function App() {
     return filteredCompanies.slice(start, start + COMPANIES_PER_PAGE);
   }, [filteredCompanies, companiesPage]);
 
+  if (!authToken) {
+    return (
+      <div className="app-shell unauthenticated">
+        <header className="app-header">
+          <h1>HiringCafe Job Watcher</h1>
+        </header>
+        <main className="app-main narrow">
+          <AuthForm
+            onAuthenticate={handleAuthenticate}
+            onModeChange={handleAuthModeChange}
+            isLoading={authLoading}
+            error={authError}
+          />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="app-shell">
       <header className="app-header">
         <h1>HiringCafe Job Watcher</h1>
+        <div className="header-actions">
+          <button type="button" className="button secondary" onClick={() => handleLogout()}>
+            Sign out
+          </button>
+        </div>
       </header>
       <main className="app-main">
         <ResumeUpload
