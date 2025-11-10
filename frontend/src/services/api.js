@@ -39,6 +39,14 @@ export async function getApplications(filters) {
   return getJson(response, 'Unable to load applications.');
 }
 
+export async function getApplicationKeywords() {
+  const response = await fetch(`${API_BASE_URL}/api/applications/keywords`);
+  if (!response.ok) {
+    throw new Error('Unable to load keywords.');
+  }
+  return getJson(response, 'Unable to load keywords.');
+}
+
 export async function getResume() {
   const response = await fetch(`${API_BASE_URL}/api/resume`);
   if (response.status === 404) {

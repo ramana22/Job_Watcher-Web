@@ -19,11 +19,43 @@ function formatScore(score) {
   return '0.00%';
 }
 
-export default function ApplicationsTable({ applications, isLoading, error, onApply }) {
+export default function ApplicationsTable({
+  applications,
+  totalCount,
+  isLoading,
+  error,
+  currentPage,
+  pageCount,
+  pageSize,
+  onPageChange,
+  onApply,
+}) {
+  const hasResults = totalCount > 0;
+  const displayStart = hasResults ? (currentPage - 1) * pageSize + 1 : 0;
+  const displayEnd = hasResults ? Math.min(currentPage * pageSize, totalCount) : 0;
+  const showSummary = hasResults && !isLoading;
+
+  const handlePrevious = () => {
+    if (currentPage > 1) {
+      onPageChange(currentPage - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentPage < pageCount) {
+      onPageChange(currentPage + 1);
+    }
+  };
+
   return (
     <div className="card">
-      <div>
+      <div className="table-header">
         <h2>Applications</h2>
+        {showSummary ? (
+          <span className="helper-text">
+            Showing {displayStart}–{displayEnd} of {totalCount}
+          </span>
+        ) : null}
       </div>
       <div className="table-wrapper">
         <table>
@@ -56,7 +88,7 @@ export default function ApplicationsTable({ applications, isLoading, error, onAp
                   {error}
                 </td>
               </tr>
-            ) : applications.length === 0 ? (
+            ) : !hasResults ? (
               <tr>
                 <td colSpan={12} className="empty-state">
                   No applications found for the selected filters.
@@ -103,6 +135,22 @@ export default function ApplicationsTable({ applications, isLoading, error, onAp
             )}
           </tbody>
         </table>
+      </div>
+      <div className="table-footer">
+        <button type="button" className="button secondary" onClick={handlePrevious} disabled={currentPage <= 1 || !hasResults}>
+          Previous
+        </button>
+        <span className="helper-text">
+          Page {Math.min(currentPage, pageCount)} of {pageCount}
+        </span>
+        <button
+          type="button"
+          className="button secondary"
+          onClick={handleNext}
+          disabled={currentPage >= pageCount || !hasResults}
+        >
+          Next
+        </button>
       </div>
     </div>
   );
