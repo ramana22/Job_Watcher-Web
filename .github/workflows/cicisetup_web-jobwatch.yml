@@ -12,9 +12,6 @@ jobs:
     permissions:
       contents: read
 
-    outputs:
-      artifact-name: react-app  # 👈 pass artifact name to next job
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,13 +27,13 @@ jobs:
           npm install
           npm run build
 
-      # ✅ Upload the build output folder
+      # ✅ Upload the compiled build folder
       - name: Upload artifact for deploy
         uses: actions/upload-artifact@v4
         with:
           name: react-app
           path: ./frontend/build
-          retention-days: 2  # keep artifact longer, prevents early cleanup
+          retention-days: 1   # keep for a day; prevents expiration before deploy
 
   deploy:
     runs-on: ubuntu-latest
@@ -46,15 +43,15 @@ jobs:
       contents: read
 
     steps:
-      # ✅ Ensure artifact is downloaded correctly
+      # ✅ Download the artifact and verify it exists
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: react-app
           path: ./build
 
-      - name: Verify downloaded files
-        run: ls -R ./build || echo "No files found!"
+      - name: List downloaded files (debug)
+        run: ls -R ./build
 
       - name: Azure login
         uses: azure/login@v2
@@ -67,6 +64,6 @@ jobs:
         id: deploy
         uses: azure/webapps-deploy@v3
         with:
-          app-name: web-jobwatch
-          slot-name: Production
+          app-name: 'web-jobwatch'
+          slot-name: 'Production'
           package: ./build
