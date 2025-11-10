@@ -1,4 +1,4 @@
-name: Build and deploy Vite React app to Azure Web App - web-jobwatch
+name: Web 1 Vite React app to Azure Web App - web-jobwatch
 
 on:
   push:
@@ -78,6 +78,7 @@ jobs:
           app-name: 'web-jobwatch'
           slot-name: 'Production'
           package: ./dist
+
 
 
 
