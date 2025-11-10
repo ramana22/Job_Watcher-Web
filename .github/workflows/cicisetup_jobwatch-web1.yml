@@ -62,8 +62,9 @@ jobs:
         with:
           app-name: 'jobwatch-web1'
           slot-name: 'Production'
-          package: ./dist
+          package: ./frontend/dist
 
           
+
 
 
