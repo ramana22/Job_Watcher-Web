@@ -38,8 +38,8 @@ jobs:
         with:
           dotnet-version: ${{ env.SWASHBUCKLE_DOTNET_CORE_VERSION }}
 
-      - name: Debug: Verify repo root
-        run: dir
+      # - name: Debug: Verify repo root
+      #   run: dir
 
       - name: Restore
         run: dotnet restore JobWatcher.Api.csproj
