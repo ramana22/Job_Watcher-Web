@@ -103,4 +103,3 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok", timestamp = DateTime
     .WithOpenApi();
 
 app.Run();
-
