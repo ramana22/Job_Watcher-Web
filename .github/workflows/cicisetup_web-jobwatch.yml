@@ -47,7 +47,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: react-app
+          #name: react-app
           path: ./build
 
       - name: List downloaded files (debug)
@@ -67,4 +67,5 @@ jobs:
           app-name: 'web-jobwatch'
           slot-name: 'Production'
           package: ./build
+
 
