@@ -21,6 +21,7 @@ env:
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 8.0.x
   WORKING_DIRECTORY: backend/JobWatcher.Api
+  ASPNETCORE_ENVIRONMENT: Development
 
 jobs:
   build:
@@ -67,7 +68,7 @@ jobs:
       - name: Generate Open API Specification Document
         run: |
           $env:PATH += ";C:\Users\runneradmin\.dotnet\tools"
-          swagger tofile --output "${{ env.API_IMPORT_SPECIFICATION_PATH }}" "${{ env.API_IMPORT_DLL }}" "${{ env.API_IMPORT_VERSION }}"
+          swagger tofile --output "${{ env.API_IMPORT_SPECIFICATION_PATH }}" "${{ env.API_IMPORT_DLL }}" "${{ env.API_IMPORT_VERSION }}" --startupAssembly "${{ env.API_IMPORT_DLL }}"
         shell: pwsh
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
