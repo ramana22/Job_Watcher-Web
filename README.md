@@ -15,14 +15,14 @@ A lightweight web dashboard and ASP.NET Core REST API for aggregating job applic
 
 ```
 backend/           ASP.NET Core Web API project
-frontend/          Static HTML dashboard that consumes the API
+frontend/          React + Vite single-page application that consumes the API
 sql/               SQL Server schema scripts
 ```
 
 ## Prerequisites
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download)
-- Node.js 18+ and npm for running the static dashboard locally
+- Node.js 18+ and npm for running the React dashboard locally
 - SQL Server instance (LocalDB, container, or hosted) if you plan to persist data outside of development.
 
 ## Running the API locally
@@ -46,7 +46,7 @@ sql/               SQL Server schema scripts
    dotnet run --project JobWatcher.Api
    ```
 
-The API listens on `https://localhost:5001` and `http://localhost:5000` by default. Update `frontend/app.js` if you expose the API on a different host or port.
+The API listens on `https://localhost:5001` and `http://localhost:5000` by default. Update `frontend/src/services/api.js` if you expose the API on a different host or port.
 
 ## Front-end usage
 
@@ -55,13 +55,13 @@ The API listens on `https://localhost:5001` and `http://localhost:5000` by defau
    cd frontend
    npm install
    ```
-2. Start the lightweight dev server (defaults to http://localhost:3000):
+2. Start the Vite dev server (defaults to http://localhost:5173):
    ```bash
-   npm run start
+   npm run dev
    ```
 3. With the ASP.NET Core API running on http://localhost:5000, browse to the served dashboard.
 
-The build uses [lite-server](https://github.com/johnpapa/lite-server) to serve the static assets with live reload. You can deploy the contents of the `frontend/` directory to any static host if you prefer not to use the dev server.
+To produce a production bundle, run `npm run build` and deploy the generated assets from `frontend/dist/` to your preferred static host.
 
 ## Key API endpoints
 

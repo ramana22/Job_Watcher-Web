@@ -1,97 +1,12 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Job Watcher Dashboard</title>
-    <link rel="stylesheet" href="styles.css" />
+    <title>HiringCafe Job Watcher</title>
   </head>
   <body>
-    <header>
-      <h1>HiringCafe Job Watcher</h1>
-    </header>
-    <main>
-      <section>
-        <h2>Resume</h2>
-        <p class="status-message" id="resume-info">No resume uploaded yet.</p>
-        <form id="resume-form" class="resume-upload">
-          <input type="file" id="resume-file" accept=".txt" required />
-          <button type="submit">Upload Resume</button>
-        </form>
-      </section>
-
-      <section>
-        <h2>Applications</h2>
-        <div class="filters">
-          <label>
-            Status
-            <select id="status-filter">
-              <option value="not_applied" selected>Not Applied</option>
-              <option value="applied">Applied</option>
-              <option value="all">All</option>
-            </select>
-          </label>
-          <label>
-            Source
-            <select id="source-filter">
-              <option value="all">All Sources</option>
-            </select>
-          </label>
-          <label>
-            Posted
-            <select id="timeframe-filter">
-              <option value="all">All Time</option>
-              <option value="24h">Last 24 hours</option>
-              <option value="3d">Past 3 days</option>
-              <option value="5d">Past 5 days</option>
-            </select>
-          </label>
-          <label>
-            Sort
-            <select id="sort-filter">
-              <option value="recent" selected>Most Recent</option>
-              <option value="oldest">Oldest First</option>
-            </select>
-          </label>
-        </div>
-        <div class="table-container">
-          <table id="applications-table">
-            <thead>
-              <tr>
-                <th>Job ID</th>
-                <th>Job Title</th>
-                <th>Company</th>
-                <th>Location</th>
-                <th>Salary</th>
-                <th>Description</th>
-                <th>Apply</th>
-                <th>Search Key</th>
-                <th>Posted</th>
-                <th>Source</th>
-                <th>Matching Score</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section>
-        <h2>Companies</h2>
-        <div class="table-container company-table">
-          <table id="companies-table">
-            <thead>
-              <tr>
-                <th>Company</th>
-                <th>Career Site</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </section>
-    </main>
-    <script src="app.js" defer></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
