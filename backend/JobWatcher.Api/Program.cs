@@ -103,3 +103,21 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok", timestamp = DateTime
     .WithOpenApi();
 
 app.Run();
+
+// Required only for Swashbuckle CLI (swagger tofile)
+public partial class Program
+{
+    public static IHostBuilder CreateHostBuilder(string[] args) =>
+        Host.CreateDefaultBuilder(args)
+            .ConfigureWebHostDefaults(webBuilder =>
+            {
+                // Tell it how to build your WebApplication for CLI use
+                webBuilder.UseStartup<StartupPlaceholder>();
+            });
+}
+
+public class StartupPlaceholder
+{
+    public void ConfigureServices(IServiceCollection services) { }
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env) { }
+}
