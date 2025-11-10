@@ -1,4 +1,4 @@
-name: Build and deploy React frontend to Azure Web App - web-jobwatch
+name: Build and deploy Vite React app to Azure Web App - web-jobwatch
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
       contents: read
 
     steps:
-      # Step 1: Checkout your repository
+      # Step 1: Checkout your code
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -23,23 +23,23 @@ jobs:
         with:
           node-version: 20
 
-      # Step 3: Build the React app inside ./frontend
-      - name: Install dependencies and build React app
+      # Step 3: Build Vite app inside ./frontend
+      - name: Install dependencies and build
         working-directory: ./frontend
         run: |
           npm install
           npm run build
 
-      # Step 4: Verify build folder exists
-      - name: Verify build output
-        run: ls -R ./frontend/build
+      # Step 4: Verify dist folder
+      - name: Check dist folder
+        run: ls -R ./frontend/dist
 
-      # Step 5: Upload build folder as artifact
+      # Step 5: Upload Vite build artifact
       - name: Upload artifact for deploy
         uses: actions/upload-artifact@v4
         with:
-          name: react-app
-          path: ./frontend/build
+          name: vite-app
+          path: ./frontend/dist
           retention-days: 1
 
   deploy:
@@ -50,18 +50,18 @@ jobs:
       contents: read
 
     steps:
-      # Step 1: Download the build artifact from previous job
-      - name: Download build artifact
+      # Step 1: Download build artifact
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: react-app
-          path: ./build
+          name: vite-app
+          path: ./dist
 
       # Step 2: Verify downloaded files
-      - name: Check downloaded files
-        run: ls -R ./build
+      - name: Verify downloaded files
+        run: ls -R ./dist
 
-      # Step 3: Login to Azure
+      # Step 3: Azure Login
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -71,9 +71,8 @@ jobs:
 
       # Step 4: Deploy to Azure Web App
       - name: Deploy to Azure Web App
-        id: deploy
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'web-jobwatch'
           slot-name: 'Production'
-          package: ./build
+          package: ./dist
