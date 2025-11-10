@@ -1,6 +1,6 @@
 const API_BASE_URL =
   window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
-    ? 'https://localhost:49682' // ✅ match your ASP.NET port + https
+    ? 'https://jobwatch-api-g6a3cjenesbna5gv.canadacentral-01.azurewebsites.net/' // ✅ match your ASP.NET port + https
     : window.location.origin;
 
 
