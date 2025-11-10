@@ -31,7 +31,7 @@ jobs:
       - name: Upload artifact for deploy
         uses: actions/upload-artifact@v4
         with:
-          name: react-app
+          #name: react-app
           path: ./frontend/build
           retention-days: 1   # keep for a day; prevents expiration before deploy
 
@@ -67,3 +67,4 @@ jobs:
           app-name: 'web-jobwatch'
           slot-name: 'Production'
           package: ./build
+
