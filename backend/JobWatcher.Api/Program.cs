@@ -74,10 +74,16 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("frontend", policy =>
     {
+
         policy
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowAnyOrigin();
+    .WithOrigins(
+        "https://jobwatch-web1-bedyfgejcqebbqbg.canadacentral-01.azurewebsites.net",
+        "https://localhost:5173"
+    )
+    .AllowAnyHeader()
+    .AllowAnyMethod();
+
+            
     });
 });
 
