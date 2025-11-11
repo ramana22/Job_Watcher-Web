@@ -77,7 +77,7 @@ builder.Services.AddCors(options =>
 
         policy
     .WithOrigins(
-        "https://jobwatch-web1-bedyfgejcqebbqbg.canadacentral-01.azurewebsites.net/",
+        "https://jobwatch-web1-bedyfgejcqebbqbg.canadacentral-01.azurewebsites.net",
         "https://localhost:5173"
     )
     .AllowAnyHeader()
