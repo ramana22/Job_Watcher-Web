@@ -1,10 +1,10 @@
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL ||
-  (window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
-    ? 'https://jobwatch-api-g6a3cjenesbna5gv.canadacentral-01.azurewebsites.net/'
-    : window.location.origin);
+// const API_BASE_URL =
+//   process.env.REACT_APP_API_BASE_URL ||
+//   (window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+//     ? 'https://jobwatch-api-g6a3cjenesbna5gv.canadacentral-01.azurewebsites.net/'
+//     : window.location.origin);
 
-
+const API_BASE_URL = 'https://jobwatch-api-g6a3cjenesbna5gv.canadacentral-01.azurewebsites.net/'
 const TOKEN_STORAGE_KEY = 'jobWatcherAuthToken';
 let inMemoryToken = null;
 
