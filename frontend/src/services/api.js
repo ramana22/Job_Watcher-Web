@@ -1,7 +1,8 @@
 const API_BASE_URL =
-  window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
-    ? 'https://jobwatch-api-g6a3cjenesbna5gv.canadacentral-01.azurewebsites.net/' // ✅ match your ASP.NET port + https
-    : window.location.origin;
+  process.env.REACT_APP_API_BASE_URL ||
+  (window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+    ? 'https://jobwatch-api-g6a3cjenesbna5gv.canadacentral-01.azurewebsites.net/'
+    : window.location.origin);
 
 
 const TOKEN_STORAGE_KEY = 'jobWatcherAuthToken';
@@ -164,9 +165,9 @@ export function getCompanies() {
 }
 
 export function login(credentials) {
-  return request('/api/Auth/login', { method: 'POST', body: credentials, includeAuth: false }, 'Invalid username or password.');
+  return request('/api/auth/login', { method: 'POST', body: credentials, includeAuth: false }, 'Invalid username or password.');
 }
 
 export function register(credentials) {
-  return request('/api/Auth/register', { method: 'POST', body: credentials, includeAuth: false }, 'Unable to register user.');
+  return request('/api/auth/register', { method: 'POST', body: credentials, includeAuth: false }, 'Unable to register user.');
 }
