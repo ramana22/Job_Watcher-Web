@@ -5,6 +5,7 @@
 //     : window.location.origin);
 
 const API_BASE_URL = 'https://jobwatch-api-g6a3cjenesbna5gv.canadacentral-01.azurewebsites.net/'
+// const API_BASE_URL = 'https://localhost:49682'
 const TOKEN_STORAGE_KEY = 'jobWatcherAuthToken';
 let inMemoryToken = null;
 
