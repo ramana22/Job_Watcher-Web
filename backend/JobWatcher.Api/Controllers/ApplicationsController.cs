@@ -3,6 +3,7 @@ using JobWatcher.Api.DTOs;
 using JobWatcher.Api.Extensions;
 using JobWatcher.Api.Models;
 using JobWatcher.Api.Services;
+using JobWatcher.Api.Services.Email;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,10 +16,12 @@ public class ApplicationsController : ControllerBase
 {
     private readonly JobWatcherContext _context;
     private readonly MatchingService _matchingService;
-    public ApplicationsController(JobWatcherContext context, MatchingService matchingService)
+    private readonly IEmailService _emailService;
+    public ApplicationsController(JobWatcherContext context, MatchingService matchingService , IEmailService emailService)
     {
         _context = context;
         _matchingService = matchingService;
+        _emailService = emailService;
     }
 
     [HttpGet]
@@ -133,6 +136,8 @@ public class ApplicationsController : ControllerBase
                 existing.MatchingScore = _matchingService.CalculateScore(resumeText, existing.JobTitle, existing.Description, existing.SearchKey);
                 updated.Add(existing);
             }
+
+            await  _emailService.SendApplicationsAsync(updated);
 
             await _context.SaveChangesAsync();
             return Ok(updated.Select(app => app.ToResponse()));

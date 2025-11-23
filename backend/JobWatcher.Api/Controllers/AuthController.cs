@@ -77,25 +77,34 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AuthResponse>> Login([FromBody] AuthRequest request)
     {
-        if (request is null || string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+        try
         {
-            return BadRequest(new { message = "Username and password are required." });
+            if (request is null || string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+            {
+                return BadRequest(new { message = "Username and password are required." });
+            }
+
+            var normalized = request.Username.Trim().ToLowerInvariant();
+            var user = await _context.Users.SingleOrDefaultAsync(user => user.NormalizedUsername == normalized);
+            if (user is null)
+            {
+                return Unauthorized(new { message = "Invalid username or password." });
+            }
+
+            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+            if (result == PasswordVerificationResult.Failed)
+            {
+                return Unauthorized(new { message = "Invalid username or password." });
+            }
+
+            var token = _tokenService.GenerateToken(user);
+            return Ok(new AuthResponse(user.Username, token.Token, token.ExpiresAt));
+        }
+        catch (Exception e)
+        {
+
+            return BadRequest(e.Message);
         }
 
-        var normalized = request.Username.Trim().ToLowerInvariant();
-        var user = await _context.Users.SingleOrDefaultAsync(user => user.NormalizedUsername == normalized);
-        if (user is null)
-        {
-            return Unauthorized(new { message = "Invalid username or password." });
-        }
-
-        var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
-        if (result == PasswordVerificationResult.Failed)
-        {
-            return Unauthorized(new { message = "Invalid username or password." });
-        }
-
-        var token = _tokenService.GenerateToken(user);
-        return Ok(new AuthResponse(user.Username, token.Token, token.ExpiresAt));
     }
 }
