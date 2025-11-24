@@ -48,9 +48,10 @@ jobs:
       - name: Deploy to Azure Web App (Publish Profile)
         uses: azure/webapps-deploy@v3
         with:
-          app-name: "jobwatch-web1"
+          app-name: "hcal1-web-test"
           slot-name: "Production"
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_AC03F5AAAD9D4EAE8722D51306B5CB9D }}
           package: .
+
 
 
