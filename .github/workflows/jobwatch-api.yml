@@ -3,7 +3,7 @@ name: Deploy JobWatcher API to Azure
 on:
   push:
     branches:
-      - cicisetup
+      - main
 
 env:
   AZURE_WEBAPP_NAME: jobwatch-api
