@@ -6,7 +6,7 @@ name: WEb1 B Azure Web App - jobwatch-web1
 on:
   push:
     branches:
-      - cicisetup
+      - main
   workflow_dispatch:
 
 jobs:
