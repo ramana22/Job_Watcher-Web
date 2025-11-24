@@ -1,18 +1,93 @@
-# .NET
+###############
+# Visual Studio
+###############
+.vs/
+*.vsidx
+*_i.c
+*_p.c
+*.ilk
+*.meta
+*.obj
+*.pch
+*.pdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.log
+*.cache
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+DesignTimeBuild/
+
+#################
+# ASP.NET / .NET
+#################
 bin/
 obj/
-*.user
-*.suo
+out/
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.json
+appsettings.json   # OPTIONAL (keep only if storing sensitive configs)
 
-# Node / Front-end
+# dotnet tools
+**/dotnet-tools.json
+
+# EF Migrations (optional)
+#migrations/
+
+##################
+# Publish Profiles
+##################
+Properties/PublishProfiles/
+*.pubxml
+*.pubxml.user
+
+###############
+# Azure ARM
+###############
+**/ServiceDependencies/
+**/*profile.arm.json
+**/apis*.arm.json
+serviceDependencies.json
+
+###############
+# VS Code
+###############
+.vscode/
+settings.json
+
+###############
+# Node / Frontend
+###############
 node_modules/
 dist/
+build/
 .vite/
-.env.local
-.env.development.local
-.env.production.local
-.env.test.local
+*.tgz
+*.eslintcache
+*.stylelintcache
 
-# OS
+.env
+.env.*
+!.env.example
+
+########################
+# Chrome Extension Files
+########################
+Job_Watch_Chr_Ext_Files/
+Job_Watch_Chr_Ext_Files/hiringcafe_state.json
+Job_Watch_Chr_Ext_Files/Backup_Files/
+
+###############
+# OS Files
+###############
 .DS_Store
 Thumbs.db
