@@ -167,6 +167,111 @@ public class ApplicationsController : ControllerBase
         return Ok(application.ToResponse());
     }
 
+    [HttpPost("bulk/apply")]
+    [Authorize]
+    [ProducesResponseType(typeof(IEnumerable<ApplicationResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IEnumerable<ApplicationResponse>>> MarkManyAsApplied([FromBody] ApplicationIdListRequest payload)
+    {
+        return await UpdateStatusForIds(payload, "applied");
+    }
+
+    [HttpPost("bulk/archive")]
+    [Authorize]
+    [ProducesResponseType(typeof(IEnumerable<ApplicationResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IEnumerable<ApplicationResponse>>> MarkManyAsArchived([FromBody] ApplicationIdListRequest payload)
+    {
+        return await UpdateStatusForIds(payload, "archived");
+    }
+
+    [HttpPost("bulk/delete")]
+    [Authorize]
+    [ProducesResponseType(typeof(IEnumerable<ApplicationResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IEnumerable<ApplicationResponse>>> DeleteMany([FromBody] ApplicationIdListRequest payload)
+    {
+        if (payload?.Ids is null || payload.Ids.Count == 0)
+        {
+            return BadRequest("At least one application id is required.");
+        }
+
+        var targets = await _context.Applications
+            .IgnoreQueryFilters()
+            .Where(app => payload.Ids.Contains(app.Id) && !app.IsDeleted)
+            .ToListAsync();
+
+        foreach (var application in targets)
+        {
+            application.IsDeleted = true;
+            application.DeletedAt = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(targets.Select(app => app.ToResponse()));
+    }
+
+    [HttpPost("apply/all")]
+    [Authorize]
+    [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+    public async Task<ActionResult<int>> MarkAllAsApplied()
+    {
+        var applications = await _context.Applications.Where(app => app.Status != "applied").ToListAsync();
+        foreach (var application in applications)
+        {
+            application.Status = "applied";
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok(applications.Count);
+    }
+
+    [HttpDelete("all")]
+    [Authorize]
+    [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+    public async Task<ActionResult<int>> DeleteAll()
+    {
+        var applications = await _context.Applications
+            .IgnoreQueryFilters()
+            .Where(app => !app.IsDeleted)
+            .ToListAsync();
+
+        foreach (var application in applications)
+        {
+            application.IsDeleted = true;
+            application.DeletedAt = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok(applications.Count);
+    }
+
+    [HttpDelete("{applicationId:int}")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteApplication(int applicationId)
+    {
+        var application = await _context.Applications
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(app => app.Id == applicationId);
+
+        if (application is null)
+        {
+            return NotFound();
+        }
+
+        if (!application.IsDeleted)
+        {
+            application.IsDeleted = true;
+            application.DeletedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
+        return NoContent();
+    }
+
     private static IQueryable<Application> ApplyTimeframeFilter(IQueryable<Application> query, string? timeframe)
     {
         if (string.IsNullOrWhiteSpace(timeframe) || string.Equals(timeframe, "all", StringComparison.OrdinalIgnoreCase))
@@ -194,5 +299,26 @@ public class ApplicationsController : ControllerBase
             DateTimeKind.Local => dateTime.ToUniversalTime(),
             _ => DateTime.SpecifyKind(dateTime, DateTimeKind.Utc)
         };
+    }
+
+    private async Task<ActionResult<IEnumerable<ApplicationResponse>>> UpdateStatusForIds(ApplicationIdListRequest payload, string status)
+    {
+        if (payload?.Ids is null || payload.Ids.Count == 0)
+        {
+            return BadRequest("At least one application id is required.");
+        }
+
+        var applications = await _context.Applications
+            .Where(app => payload.Ids.Contains(app.Id))
+            .ToListAsync();
+
+        foreach (var application in applications)
+        {
+            application.Status = status;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(applications.Select(app => app.ToResponse()));
     }
 }

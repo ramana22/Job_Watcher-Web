@@ -161,6 +161,42 @@ export function markApplicationAsApplied(id) {
   return request(`/api/applications/${id}/apply`, { method: 'POST' }, 'Unable to mark application as applied.');
 }
 
+export function deleteApplication(id) {
+  return request(`/api/applications/${id}`, { method: 'DELETE' }, 'Unable to delete application.');
+}
+
+export function markApplicationsAsApplied(ids) {
+  return request(
+    '/api/applications/bulk/apply',
+    { method: 'POST', body: { ids } },
+    'Unable to mark applications as applied.',
+  );
+}
+
+export function archiveApplications(ids) {
+  return request(
+    '/api/applications/bulk/archive',
+    { method: 'POST', body: { ids } },
+    'Unable to archive applications.',
+  );
+}
+
+export function deleteApplications(ids) {
+  return request(
+    '/api/applications/bulk/delete',
+    { method: 'POST', body: { ids } },
+    'Unable to delete applications.',
+  );
+}
+
+export function markAllApplicationsAsApplied() {
+  return request('/api/applications/apply/all', { method: 'POST' }, 'Unable to mark all applications as applied.');
+}
+
+export function deleteAllApplications() {
+  return request('/api/applications/all', { method: 'DELETE' }, 'Unable to delete all applications.');
+}
+
 export function getCompanies() {
   return request('/api/companies', {}, 'Unable to load companies.');
 }

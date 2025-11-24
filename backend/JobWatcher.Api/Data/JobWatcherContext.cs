@@ -20,7 +20,7 @@ public class JobWatcherContext : DbContext
         modelBuilder.Entity<Application>(entity =>
         {
             entity.ToTable("applications");
-            entity.HasIndex(e => e.JobId).IsUnique();
+            entity.HasIndex(e => new { e.JobId, e.Source, e.IsDeleted }).IsUnique();
             entity.Property(e => e.JobId).HasMaxLength(100);
             entity.Property(e => e.JobTitle).HasMaxLength(255);
             entity.Property(e => e.Company).HasMaxLength(255);
@@ -33,6 +33,9 @@ public class JobWatcherContext : DbContext
             entity.Property(e => e.MatchingScore).HasDefaultValue(0.0);
             entity.Property(e => e.PostedTime).HasColumnType("datetime2");
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+            entity.Property(e => e.DeletedAt).HasColumnType("datetime2");
+            entity.HasQueryFilter(e => !e.IsDeleted);
         });
 
         modelBuilder.Entity<Resume>(entity =>

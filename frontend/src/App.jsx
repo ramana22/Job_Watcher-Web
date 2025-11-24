@@ -13,7 +13,13 @@ import {
   getResume,
   getStoredToken,
   login,
+  deleteApplication,
   markApplicationAsApplied,
+  markApplicationsAsApplied,
+  archiveApplications,
+  deleteApplications,
+  markAllApplicationsAsApplied,
+  deleteAllApplications,
   register,
   storeToken,
   uploadResume,
@@ -63,6 +69,8 @@ export default function App() {
   const [pendingApplication, setPendingApplication] = useState(null);
   const [showApplyPrompt, setShowApplyPrompt] = useState(false);
   const [applyConfirmationLoading, setApplyConfirmationLoading] = useState(false);
+  const [selectedApplicationIds, setSelectedApplicationIds] = useState(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
   const pendingApplicationRef = useRef(null);
   useEffect(() => {
@@ -140,6 +148,8 @@ export default function App() {
     pendingApplicationRef.current = null;
     setShowApplyPrompt(false);
     setApplyConfirmationLoading(false);
+    setSelectedApplicationIds(new Set());
+    setBulkActionLoading(false);
   }, []);
 
   const sourceOptions = useMemo(() => {
@@ -197,6 +207,19 @@ export default function App() {
       setApplicationsLoading(false);
     }
   }, [filters, refreshKeywords, handleLogout]);
+
+  useEffect(() => {
+    setSelectedApplicationIds((current) => {
+      const availableIds = new Set(applications.map((app) => app.id));
+      const next = new Set();
+      current.forEach((id) => {
+        if (availableIds.has(id)) {
+          next.add(id);
+        }
+      });
+      return next;
+    });
+  }, [applications]);
 
   const refreshResume = useCallback(async () => {
     setResumeLoading(true);
@@ -288,6 +311,33 @@ export default function App() {
     setShowApplyPrompt(false);
   };
 
+  const handleDeleteApplication = async (application) => {
+    if (!application?.id) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Remove "${application.job_title}" at ${application.company} from your applications? This action can be reversed by re-importing the job.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteApplication(application.id);
+      await refreshApplications();
+      await refreshCompanies();
+    } catch (error) {
+      console.error(error);
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        handleLogout(SESSION_EXPIRED_MESSAGE);
+      } else {
+        window.alert(error instanceof Error ? error.message : 'Unable to delete application. Please try again.');
+      }
+    }
+  };
+
   const handleApplyConfirmation = async () => {
     if (!pendingApplication?.id) {
       setShowApplyPrompt(false);
@@ -311,6 +361,162 @@ export default function App() {
       }
     } finally {
       setApplyConfirmationLoading(false);
+    }
+  };
+
+  const selectedIdsArray = useCallback(() => Array.from(selectedApplicationIds), [selectedApplicationIds]);
+
+  const handleSelectApplication = useCallback((applicationId) => {
+    setSelectedApplicationIds((current) => {
+      const next = new Set(current);
+      if (next.has(applicationId)) {
+        next.delete(applicationId);
+      } else {
+        next.add(applicationId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleSelectAllOnPage = useCallback((applicationIds, checked) => {
+    setSelectedApplicationIds((current) => {
+      const next = new Set(current);
+      applicationIds.forEach((id) => {
+        if (checked) {
+          next.add(id);
+        } else {
+          next.delete(id);
+        }
+      });
+      return next;
+    });
+  }, []);
+
+  const handleBulkDelete = async () => {
+    const ids = selectedIdsArray();
+    if (!ids.length) {
+      window.alert('Select at least one application first.');
+      return;
+    }
+
+    const confirmed = window.confirm('Delete the selected applications? This hides them until they are re-imported.');
+    if (!confirmed) {
+      return;
+    }
+
+    setBulkActionLoading(true);
+    try {
+      await deleteApplications(ids);
+      setSelectedApplicationIds(new Set());
+      await refreshApplications();
+      await refreshCompanies();
+    } catch (error) {
+      console.error(error);
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        handleLogout(SESSION_EXPIRED_MESSAGE);
+      } else {
+        window.alert(error instanceof Error ? error.message : 'Unable to delete selected applications.');
+      }
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkApply = async () => {
+    const ids = selectedIdsArray();
+    if (!ids.length) {
+      window.alert('Select at least one application first.');
+      return;
+    }
+
+    setBulkActionLoading(true);
+    try {
+      await markApplicationsAsApplied(ids);
+      setSelectedApplicationIds(new Set());
+      await refreshApplications();
+      await refreshCompanies();
+    } catch (error) {
+      console.error(error);
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        handleLogout(SESSION_EXPIRED_MESSAGE);
+      } else {
+        window.alert(error instanceof Error ? error.message : 'Unable to mark selected applications as applied.');
+      }
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkArchive = async () => {
+    const ids = selectedIdsArray();
+    if (!ids.length) {
+      window.alert('Select at least one application first.');
+      return;
+    }
+
+    setBulkActionLoading(true);
+    try {
+      await archiveApplications(ids);
+      setSelectedApplicationIds(new Set());
+      await refreshApplications();
+      await refreshCompanies();
+    } catch (error) {
+      console.error(error);
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        handleLogout(SESSION_EXPIRED_MESSAGE);
+      } else {
+        window.alert(error instanceof Error ? error.message : 'Unable to archive selected applications.');
+      }
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleMarkAllApplied = async () => {
+    const confirmed = window.confirm('Mark all applications as applied?');
+    if (!confirmed) {
+      return;
+    }
+
+    setBulkActionLoading(true);
+    try {
+      await markAllApplicationsAsApplied();
+      setSelectedApplicationIds(new Set());
+      await refreshApplications();
+      await refreshCompanies();
+    } catch (error) {
+      console.error(error);
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        handleLogout(SESSION_EXPIRED_MESSAGE);
+      } else {
+        window.alert(error instanceof Error ? error.message : 'Unable to mark all applications as applied.');
+      }
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleDeleteAllApplications = async () => {
+    const confirmed = window.confirm('Delete all applications? This hides them until they are re-imported.');
+    if (!confirmed) {
+      return;
+    }
+
+    setBulkActionLoading(true);
+    try {
+      await deleteAllApplications();
+      setSelectedApplicationIds(new Set());
+      await refreshApplications();
+      await refreshCompanies();
+    } catch (error) {
+      console.error(error);
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        handleLogout(SESSION_EXPIRED_MESSAGE);
+      } else {
+        window.alert(error instanceof Error ? error.message : 'Unable to delete all applications.');
+      }
+    } finally {
+      setBulkActionLoading(false);
     }
   };
 
@@ -498,6 +704,16 @@ export default function App() {
           pageSize={APPLICATIONS_PER_PAGE}
           onPageChange={setApplicationsPage}
           onApply={handleApply}
+          onDelete={handleDeleteApplication}
+          selectedIds={selectedApplicationIds}
+          onSelect={handleSelectApplication}
+          onSelectAll={handleSelectAllOnPage}
+          onBulkDelete={handleBulkDelete}
+          onBulkApply={handleBulkApply}
+          onBulkArchive={handleBulkArchive}
+          onMarkAllApplied={handleMarkAllApplied}
+          onDeleteAll={handleDeleteAllApplications}
+          bulkActionLoading={bulkActionLoading}
         />
         <CompaniesTable
           companies={paginatedCompanies}
