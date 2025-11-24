@@ -47,4 +47,10 @@ public class Application
 
     [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [Column("is_deleted")]
+    public bool IsDeleted { get; set; }
+
+    [Column("deleted_at")]
+    public DateTime? DeletedAt { get; set; }
 }

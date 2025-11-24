@@ -1,9 +1,11 @@
-const API_BASE_URL =
-  window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
-    ? 'https://localhost:49682' // ✅ match your ASP.NET port + https
-    : window.location.origin;
+// const API_BASE_URL =
+//   process.env.REACT_APP_API_BASE_URL ||
+//   (window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+//     ? 'https://jobwatch-api-g6a3cjenesbna5gv.canadacentral-01.azurewebsites.net/'
+//     : window.location.origin);
 
-
+const API_BASE_URL = 'https://jobwatch-api-g6a3cjenesbna5gv.canadacentral-01.azurewebsites.net/'
+// const API_BASE_URL = 'https://localhost:49682'
 const TOKEN_STORAGE_KEY = 'jobWatcherAuthToken';
 let inMemoryToken = null;
 
@@ -157,6 +159,42 @@ export function uploadResume(file) {
 
 export function markApplicationAsApplied(id) {
   return request(`/api/applications/${id}/apply`, { method: 'POST' }, 'Unable to mark application as applied.');
+}
+
+export function deleteApplication(id) {
+  return request(`/api/applications/${id}`, { method: 'DELETE' }, 'Unable to delete application.');
+}
+
+export function markApplicationsAsApplied(ids) {
+  return request(
+    '/api/applications/bulk/apply',
+    { method: 'POST', body: { ids } },
+    'Unable to mark applications as applied.',
+  );
+}
+
+export function archiveApplications(ids) {
+  return request(
+    '/api/applications/bulk/archive',
+    { method: 'POST', body: { ids } },
+    'Unable to archive applications.',
+  );
+}
+
+export function deleteApplications(ids) {
+  return request(
+    '/api/applications/bulk/delete',
+    { method: 'POST', body: { ids } },
+    'Unable to delete applications.',
+  );
+}
+
+export function markAllApplicationsAsApplied() {
+  return request('/api/applications/apply/all', { method: 'POST' }, 'Unable to mark all applications as applied.');
+}
+
+export function deleteAllApplications() {
+  return request('/api/applications/all', { method: 'DELETE' }, 'Unable to delete all applications.');
 }
 
 export function getCompanies() {

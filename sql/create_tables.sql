@@ -23,6 +23,10 @@ IF OBJECT_ID('resumes', 'U') IS NOT NULL
     DROP TABLE resumes;
 GO
 
+IF OBJECT_ID('users', 'U') IS NOT NULL
+    DROP TABLE users;
+GO
+
 -- ========================================
 -- APPLICATIONS TABLE
 -- ========================================
@@ -41,8 +45,9 @@ CREATE TABLE applications (
     matching_score FLOAT NOT NULL DEFAULT 0,
     status NVARCHAR(50) NOT NULL DEFAULT 'not_applied',
     created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    is_deleted BIT NOT NULL DEFAULT 0,
+    deleted_at DATETIME2 NULL,
 
-    -- ✅ Safe computed column for unique job+source hash
     job_hash AS CAST(HASHBYTES('SHA2_256', job_id + source) AS VARBINARY(32)) PERSISTED
 );
 GO
@@ -50,15 +55,15 @@ GO
 -- ========================================
 -- INDEXES
 -- ========================================
--- Unique constraint on job_id + source using hash (safe for long IDs)
 CREATE UNIQUE INDEX IX_applications_job_source_hash
-    ON applications(job_hash);
+    ON applications(job_hash)
+    WHERE is_deleted = 0;
 GO
 
--- Supporting indexes for query filters
 CREATE INDEX IX_applications_source ON applications(source);
 CREATE INDEX IX_applications_status ON applications(status);
 CREATE INDEX IX_applications_posted_time ON applications(posted_time);
+CREATE INDEX IX_applications_is_deleted ON applications(is_deleted);
 GO
 
 -- ========================================
@@ -71,7 +76,11 @@ CREATE TABLE resumes (
     text_content NVARCHAR(MAX) NOT NULL,
     uploaded_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
 );
+GO
 
+-- ========================================
+-- USERS TABLE
+-- ========================================
 CREATE TABLE users (
     id INT IDENTITY(1,1) PRIMARY KEY,
     username NVARCHAR(100) NOT NULL,
@@ -79,34 +88,23 @@ CREATE TABLE users (
     password_hash NVARCHAR(512) NOT NULL,
     created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
 );
+GO
 
 CREATE UNIQUE INDEX IX_users_normalized_username ON users(normalized_username);
+GO
 
 -- ========================================
 -- COMPANY DIRECTORY VIEW
 -- ========================================
+GO  -- << REQUIRED FIX
 CREATE VIEW CompanyDirectory AS
 SELECT
     company AS CompanyName,
     MIN(apply_link) AS CareerSite
 FROM applications
+WHERE is_deleted = 0
 GROUP BY company;
 GO
 
--- ========================================
--- DONE
--- ========================================
 PRINT '✅ JobWatcher database created successfully with optimized schema.';
 GO
-
-
-
-CREATE TABLE users (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    username NVARCHAR(100) NOT NULL,
-    normalized_username NVARCHAR(100) NOT NULL UNIQUE,
-    password_hash NVARCHAR(512) NOT NULL,
-    created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
-);
-
-CREATE UNIQUE INDEX IX_users_normalized_username ON users(normalized_username);
