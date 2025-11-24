@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy ASP.Net Core app to Azure Web App - hcal1-web-test
+name: Build and deploy Node.js app to Azure Web App - jobwatch-web1
 
 on:
   push:
@@ -13,43 +13,42 @@ jobs:
   build:
     runs-on: windows-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up .NET Core
-        uses: actions/setup-dotnet@v4
+      - name: Set up Node.js version
+        uses: actions/setup-node@v3
         with:
-          dotnet-version: '8.x'
+          node-version: '22.x'
 
-      - name: Build with dotnet
-        run: dotnet build --configuration Release
+      - name: Install & Build Frontend
+        working-directory: ./frontend
+        run: |
+          npm install
+          npm run build
 
-      - name: dotnet publish
-        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
-
-      - name: Upload artifact for deployment job
+      - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
         with:
-          name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+          name: node-app
+          path: ./frontend/dist
 
   deploy:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     needs: build
-    
+
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: .net-app
-      
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
+          name: node-app
+
+      - name: Deploy to Azure Web App (Publish Profile)
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'hcal1-web-test'
-          slot-name: 'Production'
+          app-name: "jobwatch-web1"
+          slot-name: "Production"
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISH_PROFILE }}
           package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_AC03F5AAAD9D4EAE8722D51306B5CB9D }}
