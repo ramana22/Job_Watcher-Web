@@ -30,7 +30,13 @@ public record ApplicationResponse(
     [property: JsonPropertyName("source")] string Source,
     [property: JsonPropertyName("matching_score")] double MatchingScore,
     [property: JsonPropertyName("status")] string Status,
-    [property: JsonPropertyName("created_at")] DateTime CreatedAt
+    [property: JsonPropertyName("created_at")] DateTime CreatedAt,
+    [property: JsonPropertyName("is_deleted")] bool IsDeleted,
+    [property: JsonPropertyName("deleted_at")] DateTime? DeletedAt
+);
+
+public record ApplicationIdListRequest(
+    [property: JsonPropertyName("ids")] IReadOnlyList<int> Ids
 );
 
 public record CompanyResponse(

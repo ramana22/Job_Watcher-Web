@@ -20,6 +20,8 @@ public static class ApplicationMappingExtensions
             application.Source,
             Math.Round(application.MatchingScore, 2),
             application.Status,
-            application.CreatedAt
+            application.CreatedAt,
+            application.IsDeleted,
+            application.DeletedAt
         );
 }

@@ -45,6 +45,8 @@ CREATE TABLE applications (
     matching_score FLOAT NOT NULL DEFAULT 0,
     status NVARCHAR(50) NOT NULL DEFAULT 'not_applied',
     created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    is_deleted BIT NOT NULL DEFAULT 0,
+    deleted_at DATETIME2 NULL,
 
     job_hash AS CAST(HASHBYTES('SHA2_256', job_id + source) AS VARBINARY(32)) PERSISTED
 );
@@ -54,12 +56,14 @@ GO
 -- INDEXES
 -- ========================================
 CREATE UNIQUE INDEX IX_applications_job_source_hash
-    ON applications(job_hash);
+    ON applications(job_hash)
+    WHERE is_deleted = 0;
 GO
 
 CREATE INDEX IX_applications_source ON applications(source);
 CREATE INDEX IX_applications_status ON applications(status);
 CREATE INDEX IX_applications_posted_time ON applications(posted_time);
+CREATE INDEX IX_applications_is_deleted ON applications(is_deleted);
 GO
 
 -- ========================================
@@ -98,6 +102,7 @@ SELECT
     company AS CompanyName,
     MIN(apply_link) AS CareerSite
 FROM applications
+WHERE is_deleted = 0
 GROUP BY company;
 GO
 
