@@ -51,7 +51,7 @@ body {
 .app-main {
   flex: 1 1 auto;
   padding: clamp(1.25rem, 2vw + 0.5rem, 3rem);
-  max-width: 1200px;
+  max-width: 96%;
   width: 100%;
   margin: 0 auto;
   display: flex;
