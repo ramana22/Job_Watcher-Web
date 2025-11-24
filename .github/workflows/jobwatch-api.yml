@@ -34,9 +34,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    permissions:
-      id-token: write     # Required for OIDC login
-      contents: read
 
     steps:
       - name: Download Artifact
@@ -44,15 +41,9 @@ jobs:
         with:
           name: frontend-dist
 
-      - name: Azure Login via OIDC
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: "jobwatch-web1"
-          package: .
+          package: ./frontend-dist
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_AC03F5AAAD9D4EAE8722D51306B5CB9D }}
