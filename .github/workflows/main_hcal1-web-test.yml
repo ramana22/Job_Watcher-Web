@@ -50,6 +50,7 @@ jobs:
         with:
           app-name: "jobwatch-web1"
           slot-name: "Production"
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISH_PROFILE }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_AC03F5AAAD9D4EAE8722D51306B5CB9D }}
           package: .
+
 
