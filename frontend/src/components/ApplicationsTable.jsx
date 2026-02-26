@@ -123,7 +123,7 @@ console.log("applications", applications);
               <th>Company</th>
               <th>Location</th>
               <th>Salary</th>
-              <th className="description-cell">Description</th>
+              <th className="description-cell">Summmary</th>
               <th className="cell-small">Apply</th>
               <th>Search Key</th>
               <th className="cell-small">Posted</th>
@@ -171,7 +171,7 @@ console.log("applications", applications);
                     <td>{application.location ?? '—'}</td>
                     <td>{application.salary ?? '—'}</td>
                     <td className="description-cell">
-                      <p title={application.description}>{truncate(application.description)}</p>
+                      <p title={application.summary}>{truncate(application.summary)}</p>
                     </td>
                     <td className="cell-small">
                       {application.apply_link ? (
