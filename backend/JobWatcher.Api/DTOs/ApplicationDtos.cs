@@ -13,7 +13,10 @@ public record ApplicationCreateRequest(
     [property: JsonPropertyName("search_key")] string? SearchKey,
     [property: JsonPropertyName("posted_time")] DateTime PostedTime,
     [property: JsonPropertyName("source")] string Source,
-    [property: JsonPropertyName("matching_score")] double? MatchingScore
+    [property: JsonPropertyName("matching_score")] double? MatchingScore,
+    [property: JsonPropertyName("summary")] string? Summary,
+    [property: JsonPropertyName("applicationObject")] string? ApplicationObjectString
+
 );
 
 public record ApplicationResponse(
@@ -32,7 +35,9 @@ public record ApplicationResponse(
     [property: JsonPropertyName("status")] string Status,
     [property: JsonPropertyName("created_at")] DateTime CreatedAt,
     [property: JsonPropertyName("is_deleted")] bool IsDeleted,
-    [property: JsonPropertyName("deleted_at")] DateTime? DeletedAt
+    [property: JsonPropertyName("deleted_at")] DateTime? DeletedAt,
+    [property: JsonPropertyName("summary")] string? Summary,
+    [property: JsonPropertyName("applicationObject")] string? ApplicationObjectString
 );
 
 public record ApplicationIdListRequest(

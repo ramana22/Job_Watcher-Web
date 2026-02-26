@@ -132,6 +132,8 @@ public class ApplicationsController : ControllerBase
                 existing.SearchKey = item.SearchKey;
                 existing.PostedTime = NormalizeToUtc(item.PostedTime);
                 existing.Source = item.Source;
+                existing.Summary = item.Summary;
+                existing.ApplicationObject = item.ApplicationObjectString;
 
                 existing.MatchingScore = _matchingService.CalculateScore(resumeText, existing.JobTitle, existing.Description, existing.SearchKey);
                 updated.Add(existing);

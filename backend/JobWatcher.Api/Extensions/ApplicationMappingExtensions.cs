@@ -22,6 +22,8 @@ public static class ApplicationMappingExtensions
             application.Status,
             application.CreatedAt,
             application.IsDeleted,
-            application.DeletedAt
+            application.DeletedAt,
+            application.Summary,
+            application.ApplicationObject
         );
 }

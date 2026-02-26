@@ -53,4 +53,9 @@ public class Application
 
     [Column("deleted_at")]
     public DateTime? DeletedAt { get; set; }
+
+    [Column("summary")]
+    public string? Summary { get; set; }
+    [Column("applicationObject")]
+    public string? ApplicationObject { get; set; }
 }
