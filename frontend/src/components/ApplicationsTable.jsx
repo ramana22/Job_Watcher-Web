@@ -28,6 +28,8 @@ export default function ApplicationsTable({
   pageCount,
   pageSize,
   onPageChange,
+  search,
+  onSearchChange,
   onApply,
   onDelete,
   selectedIds,
@@ -48,7 +50,7 @@ export default function ApplicationsTable({
   const pageSelectedCount = currentPageIds.filter((id) => selectedIds?.has(id)).length;
   const allPageSelected = currentPageIds.length > 0 && pageSelectedCount === currentPageIds.length;
   const somePageSelected = pageSelectedCount > 0 && pageSelectedCount < currentPageIds.length;
-
+console.log("applications", applications);
   const handlePrevious = () => {
     if (currentPage > 1) {
       onPageChange(currentPage - 1);
@@ -65,11 +67,22 @@ export default function ApplicationsTable({
     <div className="card">
       <div className="table-header">
         <h2>Applications</h2>
-        {showSummary ? (
+         <div className="table-header-actions">
+          <input
+            type="search"
+            className="search-input"
+            value={search}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="Search companies or job titles"
+            aria-label="Search companies"
+          />
+           {showSummary ? (
           <span className="helper-text">
             Showing {displayStart}–{displayEnd} of {totalCount}
           </span>
         ) : null}
+        </div>
+      
       </div>
       <div className="table-actions" role="group" aria-label="Application bulk actions">
         <button type="button" className="button secondary" onClick={onBulkApply} disabled={bulkActionLoading}>

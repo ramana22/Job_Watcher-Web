@@ -1,7 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Text;
-using System.Text.Json;
-using JobWatcher.Api.Data;
+﻿using JobWatcher.Api.Data;
 using JobWatcher.Api.Models;
 using JobWatcher.Api.Models.Email;
 using JobWatcher.Api.Services;
@@ -10,6 +7,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
+using System.Text.Json;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -89,7 +91,40 @@ builder.Services
     });
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "JobWatcher API",
+        Version = "v1"
+    });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter JWT token like: Bearer {your token}"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
 
 // ✅ CORS policy for frontend
 builder.Services.AddCors(options =>
@@ -130,7 +165,15 @@ app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { status = "ok", timestamp = DateTime.UtcNow }))
     .WithName("HealthCheck")
     .WithOpenApi();
-
+app.MapGet("/db-check", async (JobWatcherContext db) =>
+{
+    var conn = db.Database.GetDbConnection();
+    return new
+    {
+        Database = conn.Database,
+        DataSource = conn.DataSource
+    };
+});
 app.Run();
 
 // ✅ Needed for Swashbuckle CLI (swagger tofile)

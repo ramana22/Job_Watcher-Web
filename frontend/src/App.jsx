@@ -47,6 +47,8 @@ export default function App() {
   const [applications, setApplications] = useState([]);
   const [applicationsLoading, setApplicationsLoading] = useState(false);
   const [applicationsError, setApplicationsError] = useState('');
+  const [applicationSearch, setApplicationSearch] = useState('');
+
 
   const [applicationsPage, setApplicationsPage] = useState(1);
 
@@ -595,10 +597,24 @@ export default function App() {
       setApplicationsPage(1);
     }
   }, [filters.keyword, keywordOptions]);
+  const filteredApplications = useMemo(() => {
+    if (!applicationSearch.trim()) {
+      return applications;
+    }
+    const search = applicationSearch.trim().toLowerCase();
+    return applications.filter((application) => {
+      const title = application.job_title?.toLowerCase() ?? '';
+      const company = application.company?.toLowerCase() ?? '';
+      
+      return title.includes(search) || company.includes(search);
+    });
+  }, [applications, applicationSearch]);
 
   const applicationPageCount = useMemo(() => {
-    return Math.max(1, Math.ceil(applications.length / APPLICATIONS_PER_PAGE));
-  }, [applications.length]);
+    return Math.max(1, Math.ceil(filteredApplications.length / APPLICATIONS_PER_PAGE));
+  }, [filteredApplications.length]);
+
+ 
 
   useEffect(() => {
     if (applicationsPage > applicationPageCount) {
@@ -607,12 +623,12 @@ export default function App() {
   }, [applicationsPage, applicationPageCount]);
 
   const paginatedApplications = useMemo(() => {
-    if (!applications.length) {
-      return [];
-    }
-    const start = (applicationsPage - 1) * APPLICATIONS_PER_PAGE;
-    return applications.slice(start, start + APPLICATIONS_PER_PAGE);
-  }, [applications, applicationsPage]);
+  if (!filteredApplications.length) {
+    return [];
+  }
+  const start = (applicationsPage - 1) * APPLICATIONS_PER_PAGE;
+  return filteredApplications.slice(start, start + APPLICATIONS_PER_PAGE);
+}, [filteredApplications, applicationsPage]);
 
   const filteredCompanies = useMemo(() => {
     if (!companySearch.trim()) {
@@ -696,13 +712,15 @@ export default function App() {
         </div>
         <ApplicationsTable
           applications={paginatedApplications}
-          totalCount={applications.length}
+          totalCount={filteredApplications.length}
           isLoading={applicationsLoading}
           error={applicationsError}
           currentPage={applicationsPage}
           pageCount={applicationPageCount}
           pageSize={APPLICATIONS_PER_PAGE}
           onPageChange={setApplicationsPage}
+          search={applicationSearch}
+          onSearchChange={setApplicationSearch}
           onApply={handleApply}
           onDelete={handleDeleteApplication}
           selectedIds={selectedApplicationIds}
@@ -714,6 +732,7 @@ export default function App() {
           onMarkAllApplied={handleMarkAllApplied}
           onDeleteAll={handleDeleteAllApplications}
           bulkActionLoading={bulkActionLoading}
+         
         />
         <CompaniesTable
           companies={paginatedCompanies}
