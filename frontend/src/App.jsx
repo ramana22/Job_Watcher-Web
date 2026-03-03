@@ -4,6 +4,7 @@ import AuthForm from './components/AuthForm.jsx';
 import CompaniesTable from './components/CompaniesTable.jsx';
 import Filters from './components/Filters.jsx';
 import ResumeUpload from './components/ResumeUpload.jsx';
+import ChatWidget from './components/chat/ChatWidget';
 import {
   ApiError,
   clearStoredToken,
@@ -678,6 +679,7 @@ export default function App() {
             error={authError}
           />
         </main>
+        <ChatWidget />
       </div>
     );
   }
@@ -771,6 +773,7 @@ export default function App() {
           </div>
         </div>
       ) : null}
+      <ChatWidget />
     </div>
   );
 }

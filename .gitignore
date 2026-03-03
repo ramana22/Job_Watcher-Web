@@ -32,6 +32,7 @@ DesignTimeBuild/
 bin/
 obj/
 out/
+_run/
 appsettings.Development.json
 appsettings.Local.json
 appsettings.*.json
