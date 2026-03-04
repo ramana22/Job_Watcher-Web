@@ -25,14 +25,14 @@ public class CompaniesController : ControllerBase
         try
         {
 
-            // 1️⃣ Load relevant records from DB (simple SQL query)
+            // 1️ Load relevant records from DB (simple SQL query)
             var allApps = await _context.Applications
                 .AsNoTracking()
                 .Where(a => !string.IsNullOrEmpty(a.Company))
                 .Select(a => new { a.Company, a.ApplyLink }) // only select what you need
                 .ToListAsync();
 
-            // 2️⃣ Do grouping and picking first ApplyLink in memory
+            // 2️ Do grouping and picking first ApplyLink in memory
             var companies = allApps
                 .GroupBy(a => a.Company)
                 .Select(g => new CompanyResponse(

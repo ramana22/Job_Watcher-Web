@@ -1,5 +1,5 @@
 const DEFAULT_API_BASE_URL = 'https://jobwatch-api-g6a3cjenesbna5gv.canadacentral-01.azurewebsites.net';
-// const DEFAULT_API_BASE_URL = 'https://localhost:49869/';
+//const DEFAULT_API_BASE_URL = 'https://localhost:49869/';
 const ENV_API_BASE_URL =
   typeof import.meta !== 'undefined' && import.meta.env && typeof import.meta.env.VITE_API_BASE_URL === 'string'
     ? import.meta.env.VITE_API_BASE_URL.trim()

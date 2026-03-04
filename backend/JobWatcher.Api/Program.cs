@@ -1,7 +1,8 @@
-﻿using JobWatcher.Api.Data;
+using JobWatcher.Api.Data;
 using JobWatcher.Api.Models;
 using JobWatcher.Api.Models.Email;
 using JobWatcher.Api.Services;
+using JobWatcher.Api.Services.AI_Service;
 using JobWatcher.Api.Services.Email;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -35,6 +36,8 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 // ✅ Custom services
 builder.Services.AddScoped<MatchingService>();
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<AgentTools>();
+builder.Services.AddScoped<AiService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 // ✅ JWT configuration
@@ -77,7 +80,7 @@ builder.Services
 
 // ✅ Add HttpClient for proxy
 builder.Services.AddHttpClient();
-
+builder.Services.AddHttpContextAccessor();
 // ✅ Authorization
 builder.Services.AddAuthorization();
 

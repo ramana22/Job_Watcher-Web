@@ -59,7 +59,7 @@ const ChatWidget = () => {
 
   const sendMessage = async () => {
     if (isStreaming || !input.trim()) return;
-
+  
     const newMessages = [
       ...(messages as Message[]),
       { role: "user" as const, content: input },
@@ -68,10 +68,10 @@ const ChatWidget = () => {
     setInput("");
     setError(null);
     setIsStreaming(true);
-
+  
     try {
       const token = getStoredToken();
-      const response = await fetch(`${API_BASE_URL}/api/chat/stream`, {
+      const response = await fetch(`${API_BASE_URL}/api/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -81,97 +81,26 @@ const ChatWidget = () => {
           messages: [{ role: "system", content: systemPrompt }, ...newMessages],
         }),
       });
-
+  
       if (!response.ok) {
         const details = await response.text().catch(() => "");
         throw new Error(details || `Request failed (${response.status})`);
       }
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error("No response body received.");
-      }
-
-      const decoder = new TextDecoder("utf-8");
-      let assistantRaw = "";
-      let buffer = "";
-      let currentEvent = "message";
-      let dataParts: string[] = [];
-
-      const flushEvent = () => {
-        if (dataParts.length === 0) {
-          currentEvent = "message";
-          return;
-        }
-        const data = dataParts.join("\n");
-        dataParts = [];
-
-        if (currentEvent === "error") {
-          try {
-            const parsed = JSON.parse(data);
-            setError(typeof parsed?.error === "string" ? parsed.error : data);
-          } catch {
-            setError(data);
-          } finally {
-            currentEvent = "message";
-          }
-          return;
-        }
-
-        assistantRaw += data;
-        const assistantMessage = formatAssistantMarkdown(assistantRaw);
-        setMessages((prev) => {
-          const updated = [...prev];
-          const last = updated[updated.length - 1];
-          if (last?.role === "assistant") {
-            updated[updated.length - 1] = { ...last, content: assistantMessage };
-          } else {
-            updated.push({ role: "assistant", content: assistantMessage });
-          }
-          return updated;
-        });
-        currentEvent = "message";
-      };
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex = buffer.indexOf("\n");
-        while (newlineIndex !== -1) {
-          const rawLine = buffer.slice(0, newlineIndex);
-          buffer = buffer.slice(newlineIndex + 1);
-          const line = rawLine.replace(/\r$/, "");
-
-          if (line.startsWith("event:")) {
-            currentEvent = line.slice("event:".length).trim() || "message";
-          } else if (line.startsWith("data:")) {
-            // SSE spec allows an optional single space after "data:".
-            // We must NOT trim leading spaces in the payload itself,
-            // otherwise streamed tokens like " there" lose their space
-            // and words get glued together (e.g., "Hithere").
-            if (line.startsWith("data: ")) {
-              dataParts.push(line.slice("data: ".length));
-            } else {
-              dataParts.push(line.slice("data:".length));
-            }
-          } else if (line.trim() === "") {
-            flushEvent();
-          }
-
-          newlineIndex = buffer.indexOf("\n");
-        }
-      }
-      flushEvent();
+  
+      const data = await response.json();
+  
+      const assistantMessage = formatAssistantMarkdown(data.reply);
+  
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: assistantMessage },
+      ]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to send message.");
     } finally {
       setIsStreaming(false);
     }
   };
-
   return (
     <>
       {/* Floating Button */}
