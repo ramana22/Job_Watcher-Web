@@ -1,11 +1,12 @@
-using System.Text;
 using JobWatcher.Api.Data;
 using JobWatcher.Api.DTOs;
 using JobWatcher.Api.Models;
 using JobWatcher.Api.Services;
+using JobWatcher.Api.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
 
 namespace JobWatcher.Api.Controllers;
 
@@ -51,16 +52,15 @@ public class ResumeController : ControllerBase
 
         await using var memoryStream = new MemoryStream();
         await file.CopyToAsync(memoryStream);
+
         var bytes = memoryStream.ToArray();
 
-        string textContent;
-        try
+        // Extract text from PDF
+        var textContent = PdfUtility.ExtractPdfText(bytes);
+
+        if (string.IsNullOrWhiteSpace(textContent))
         {
-            textContent = Encoding.UTF8.GetString(bytes);
-        }
-        catch (DecoderFallbackException)
-        {
-            return BadRequest("Resume must be a UTF-8 text file");
+            return BadRequest("Unable to extract text from the uploaded resume.");
         }
 
         var resume = new Resume
@@ -74,9 +74,15 @@ public class ResumeController : ControllerBase
         _context.Resumes.Add(resume);
 
         var applications = await _context.Applications.ToListAsync();
+
         foreach (var application in applications)
         {
-            application.MatchingScore = _matchingService.CalculateScore(textContent, application.JobTitle, application.Description, application.SearchKey);
+            application.MatchingScore = _matchingService.CalculateScore(
+                textContent,
+                application.JobTitle,
+                application.Description,
+                application.SearchKey
+            );
         }
 
         await _context.SaveChangesAsync();

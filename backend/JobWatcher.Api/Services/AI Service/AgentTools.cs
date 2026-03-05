@@ -1,4 +1,5 @@
 using JobWatcher.Api.Data;
+using JobWatcher.Api.Utility;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
@@ -69,10 +70,21 @@ public class AgentTools
         var user = _httpContext.HttpContext?.User;
         var name = user?.FindFirst(ClaimTypes.Name)?.Value ?? "Unknown User";
 
-        var resume = await _db.Resumes.FirstOrDefaultAsync().ConfigureAwait(false);
-        if (resume == null)
+        var resume = await _db.Resumes
+            .FirstOrDefaultAsync()
+            .ConfigureAwait(false);
+
+        if (resume == null || resume.Content == null)
             return "No resume information available.";
-        return $"Resume for the user {name} fetched with content {resume.Content}";
+
+        // Extract text from stored PDF
+        var resumeText = PdfUtility.ExtractPdfText(resume.Content);
+
+        // Optional: limit length for AI
+        if (resumeText.Length > 4000)
+            resumeText = resumeText.Substring(0, 4000);
+
+        return $"Resume information for {name}:\n\n{resumeText}";
     }
 
     public async Task<object> GetCurrentUserInfo()
