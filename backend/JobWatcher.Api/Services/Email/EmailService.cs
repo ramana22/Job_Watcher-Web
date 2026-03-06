@@ -21,10 +21,10 @@ namespace JobWatcher.Api.Services.Email
             await SendToAsync(_settings.MailTo, subject, htmlBody);
         }
 
-        public async Task SendToAsync(string to, string subject, string htmlBody)
+        public async Task SendToAsync(string to, string subject, string htmlBody, bool addAddress = true)
         {
             var message = new MimeMessage();
-            message.From.Add(new MailboxAddress("JobWatcher Bot", _settings.MailFrom));
+            message.From.Add(new MailboxAddress(addAddress ?"JobWatcher Bot" :"", _settings.MailFrom));
             message.To.Add(new MailboxAddress(to, to));
             message.Subject = subject;
 
@@ -55,7 +55,7 @@ namespace JobWatcher.Api.Services.Email
     public interface IEmailService
     {
         Task SendAsync(string subject, string htmlBody);
-        Task SendToAsync(string to, string subject, string htmlBody);
+        Task SendToAsync(string to, string subject, string htmlBody, bool addAddress);
         Task SendApplicationsAsync(List<Application> applications);
 
     }

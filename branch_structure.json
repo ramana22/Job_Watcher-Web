@@ -1,0 +1,18 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "AIChatBotIntegration",
+    "codex/create-job-application-tracking-web-app",
+    "main"
+  ],
+  "parent": {
+    "AIChatBotIntegration": "main",
+    "codex/create-job-application-tracking-web-app": "main",
+    "main": null
+  },
+  "order": [
+    "main",
+    "AIChatBotIntegration",
+    "codex/create-job-application-tracking-web-app"
+  ]
+}
