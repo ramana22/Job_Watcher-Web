@@ -1,4 +1,5 @@
 using JobWatcher.Api.Data;
+using JobWatcher.Api.Services.Email;
 using JobWatcher.Api.Utility;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -9,10 +10,12 @@ public class AgentTools
 {
     private readonly JobWatcherContext _db;
     private readonly IHttpContextAccessor _httpContext;
-    public AgentTools(JobWatcherContext db, IHttpContextAccessor httpContext)
+    private readonly IEmailService _emailService;
+    public AgentTools(JobWatcherContext db, IHttpContextAccessor httpContext, IEmailService emailService)
     {
         _db = db;
         _httpContext = httpContext;
+        _emailService = emailService;
     }
 
     /// <summary>
@@ -59,6 +62,7 @@ public class AgentTools
                 a.MatchingScore,
                 a.PostedTime,
                 a.Source,
+                a.ApplyLink
             })
             .Cast<object>()
             .ToListAsync()
@@ -87,16 +91,40 @@ public class AgentTools
         return $"Resume information for {name}:\n\n{resumeText}";
     }
 
-    public async Task<object> GetCurrentUserInfo()
+    public Task<object> GetCurrentUserInfo()
     {
         var user = _httpContext.HttpContext?.User;
 
-        return new
+        var fullName = user?.FindFirst(ClaimTypes.Name)?.Value
+            ?? user?.FindFirst("name")?.Value
+            ?? "User";
+
+        var email = user?.FindFirst(ClaimTypes.Email)?.Value
+            ?? user?.FindFirst("email")?.Value
+            ?? "";
+
+        return Task.FromResult<object>(new
         {
-            Id = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value,
-            Email = user?.FindFirst(ClaimTypes.Email)?.Value,
-            Name = user?.FindFirst(ClaimTypes.Name)?.Value
-        };
+            FullName = fullName,
+            Email = email
+        });
+    }
+
+    /// <summary>
+    /// Sends an email to a recruiter
+    /// </summary>
+    public async Task<string> SendEmailAsync(string to, string subject, string body)
+    {
+        // Convert plain text line breaks to HTML
+        var htmlBody = "<p>" + body
+         .Replace("\r\n\r\n", "</p><p>")
+         .Replace("\n\n", "</p><p>")
+         .Replace("\n", "<br/>")
+         + "</p>";
+
+        await _emailService.SendToAsync(to, subject, htmlBody, false);
+
+        return $"Email successfully sent to {to}";
     }
 }
 

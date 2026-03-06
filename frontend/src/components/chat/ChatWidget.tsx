@@ -37,17 +37,17 @@ const ChatWidget = () => {
 
   const toggleChat = () => setIsOpen(!isOpen);
 
-  const systemPrompt = useMemo(
-    () =>
-      [
-        "You are JobWatch AI Assistant, helping users with job searching and career tasks.",
-        "Write in a professional, friendly tone.",
-        "Use Markdown for formatting (bold, lists, code), and ensure it renders cleanly.",
-        "Do not use emojis.",
-        "Do not use the sequence ':-'. If you need a colon, use ':' followed by a space or a newline.",
-      ].join("\n"),
-    [],
-  );
+  // const systemPrompt = useMemo(
+  //   () =>
+  //     [
+  //       "You are JobWatch AI Assistant, helping users with job searching and career tasks.",
+  //       "Write in a professional, friendly tone.",
+  //       "Use Markdown for formatting (bold, lists, code), and ensure it renders cleanly.",
+  //       "Do not use emojis.",
+  //       "Do not use the sequence ':-'. If you need a colon, use ':' followed by a space or a newline.",
+  //     ].join("\n"),
+  //   [],
+  // );
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -78,7 +78,7 @@ const ChatWidget = () => {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          messages: [{ role: "system", content: systemPrompt }, ...newMessages],
+          messages: [...newMessages] 
         }),
       });
   

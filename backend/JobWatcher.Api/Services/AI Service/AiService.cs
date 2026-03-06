@@ -15,7 +15,7 @@ namespace JobWatcher.Api.Services.AI_Service
     {
         private readonly ChatClient _chatClient;
         private readonly AgentTools _tools;
-        public AiService(IConfiguration config , AgentTools agentTools)
+        public AiService(IConfiguration config, AgentTools agentTools)
         {
             _tools = agentTools;
             var endpoint = config["AzureOpenAI:Endpoint"];
@@ -38,7 +38,7 @@ namespace JobWatcher.Api.Services.AI_Service
 
             _chatClient = openAIClient.GetChatClient(deployment);
         }
-  
+
         public async Task<string> GeneralChatAsync(List<ChatMessageDto> messagesDto)
         {
             var messages = new List<ChatMessage>();
@@ -101,7 +101,57 @@ namespace JobWatcher.Api.Services.AI_Service
         {
             var messages = MapMessages(messagesDto);
             messages.Insert(0, new SystemChatMessage(
-        "You are a job application assistant. Use tools when data from the database is needed."));
+ """
+You are JobWatch AI Assistant.
+
+You help users with:
+- job search
+- analyzing job applications
+- reviewing resumes
+- sending recruiter emails
+- tracking applications
+
+Guidelines:
+- Write in a professional and friendly tone.
+- Keep responses concise and helpful.
+- Format responses using Markdown when appropriate.
+- Do not use emojis.
+
+Tool usage rules:
+- Use tools whenever database information is required.
+- Never invent application or resume data.
+- If the user asks about applications, resume information, or user details, call the appropriate tool.
+
+Recruiter email capability:
+- When the user asks to contact or email a recruiter, write the email in a natural human tone as if the candidate personally wrote it.
+- Avoid rigid templates, placeholders, or repetitive phrasing.
+- Adapt the message depending on the role mentioned (for example .NET Developer, Java Developer, Software Engineer, QA Engineer).
+- Keep the email concise, professional, and conversational.
+- Express genuine interest in the role or team.
+
+Email generation rules:
+- Always generate both an email subject and an email body.
+- The subject should clearly indicate the candidate's interest in the role.
+- The body should read like a short recruiter outreach message.
+
+Signature rules:
+- Before generating the email, call the get_current_user_info tool to retrieve the sender's name and email.
+- Append a natural signature using the logged-in user's details.
+
+Signature format:
+
+Best regards,
+<Full Name>
+<Email>
+
+Important:
+- Never include placeholders such as "[Your Name]" or "[Your Contact Information]".
+- After generating the subject and body, call the send_email tool to send the email.
+- Always confirm the email draft with the user before sending the email.
+- Do not output the email text directly when the user explicitly asks to send it. Instead, call the send_email tool.
+If the email address is unavailable, include only the user's name in the signature.
+"""
+ ));
 
             var options = new ChatCompletionOptions();
 
@@ -119,7 +169,7 @@ namespace JobWatcher.Api.Services.AI_Service
 
                 if (response.FinishReason != ChatFinishReason.ToolCalls)
                 {
-                    return response.Content[0].Text;
+                    return response.Content.FirstOrDefault()?.Text ?? "";
                 }
 
                 foreach (var toolCall in response.ToolCalls)
@@ -135,7 +185,7 @@ namespace JobWatcher.Api.Services.AI_Service
 
         private async Task<object> ExecuteTool(ChatToolCall toolCall)
         {
-            var args = JsonDocument.Parse(toolCall.FunctionArguments);
+            using var args = JsonDocument.Parse(toolCall.FunctionArguments);
 
             switch (toolCall.FunctionName)
             {
@@ -163,6 +213,14 @@ namespace JobWatcher.Api.Services.AI_Service
                 case "get_current_user_info":
                     {
                         return await _tools.GetCurrentUserInfo();
+                    }
+                case "send_email":
+                    {
+                        string to = args.RootElement.GetProperty("to").GetString()!;
+                        string subject = args.RootElement.GetProperty("subject").GetString()!;
+                        string body = args.RootElement.GetProperty("body").GetString()!;
+
+                        return await _tools.SendEmailAsync(to, subject, body);
                     }
                 default:
                     throw new InvalidOperationException($"Unknown tool: {toolCall.FunctionName}");
@@ -227,7 +285,35 @@ namespace JobWatcher.Api.Services.AI_Service
                 properties = new { }
             })
         )
-    };
+         ,
+            ChatTool.CreateFunctionTool(
+    functionName: "send_email",
+    functionDescription: "Send a professional recruiter email including subject and message body written by the AI",
+    functionParameters: BinaryData.FromObjectAsJson(new
+    {
+        type = "object",
+        properties = new
+        {
+            to = new
+            {
+                type = "string",
+                description = "Recruiter email address"
+            },
+            subject = new
+            {
+                type = "string",
+                description = "Email subject"
+            },
+            body = new
+            {
+                type = "string",
+                description = "Email content"
+            }
+        },
+        required = new[] { "to", "subject", "body" }
+    })
+),
+            };
         }
 
 
